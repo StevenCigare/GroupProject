@@ -39,6 +39,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.check_boxes[0].setText("Gunnar Farneback optical flow")
         self.check_boxes[1].setText("Gaussian Blur")
         self.check_boxes[2].setText("Edge detection")
+        self.check_boxes[3].setText("sempia")
+        self.check_boxes[4].setText("pencil sketch")
+        self.check_boxes[5].setText("cartooning")
         self.pushButtonVideo.clicked.connect(self.apply_effects_to_video)
         #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
@@ -83,11 +86,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         toolbar.addWidget(button1)
         """
     def save_video_as(self):
+        print("siema")
         fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4)")
         height, width = self.changedFrames[0].shape[0],self.changedFrames[0].shape[1]
         frame_size = (int(width), int(height))
         output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 30, frame_size)
-
+    
         for frame in self.changedFrames:
             output.write(frame)
         
@@ -99,15 +103,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.changedFrames = self.frames
         if self.check_boxes[0].isChecked():
             self.changedFrames = self.effects.gunnar_farneback_optical_flow(self.changedFrames)
-            #self.change_affected_frame(self.changedFrames)
-
         if self.check_boxes[1].isChecked():
             self.changedFrames = self.effects.gaussian_blur(self.changedFrames)
-            print("hejka gaussian blur")
-            #self.change_affected_frame(self.changedFrame)
         if self.check_boxes[2].isChecked():
-            self.changedFrame = self.effects.edge_detection(self.changedFrames)
-
+            self.changedFrames = self.effects.edge_detection(self.changedFrames)
+        if self.check_boxes[3].isChecked():
+            self.changedFrames = self.effects.sepia(self.changedFrames)
+        if self.check_boxes[4].isChecked():
+            self.changedFrames = self.effects.pencil_sketch(self.changedFrames)
+        if self.check_boxes[5].isChecked():
+            self.changedFrames = self.effects.cartonning(self.changedFrames)
+        print("done")
         
 
     def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
@@ -122,6 +128,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.check_boxes[2].isChecked():
             self.changedFrame = self.effects.edge_detection_preview(self.changedFrame)
             self.change_affected_frame(self.changedFrame)
+        if self.check_boxes[3].isChecked():
+            self.changedFrame = self.effects.sepia_preview(self.changedFrame)
+            self.change_affected_frame(self.changedFrame)
+        if self.check_boxes[4].isChecked():
+            self.changedFrame = self.effects.pencil_sketch_preview(self.changedFrame)
+            self.change_affected_frame(self.changedFrame)
+        if self.check_boxes[5].isChecked():
+            self.changedFrame = self.effects.cartooning_preview(self.changedFrame)
+            self.change_affected_frame(self.changedFrame)
+
+
 
 
     def change_affected_frame(self, frame):
