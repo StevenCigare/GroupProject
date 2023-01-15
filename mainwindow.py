@@ -4,6 +4,7 @@ from PySide6.QtGui import QPixmap, QImage
 from ui_MainWindow import Ui_MainWindow
 from extract_frames import extract
 from effect import Effect
+import cv2
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -15,15 +16,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.effects = Effect()
         # self.mainwindow.resize(1600, 900)
         self.mainFrame = 0
+        self.mainFrame = 0
         self.framesNumber = 0
+        self.changedFrame = 0
         self.frames = []
         self.qImages = []
         self.changedFrames = []
         self.slider_frames = [self.label1, self.label2, self.label3, self.label4, self.label5]
         self.check_boxes = [self.checkBox, self.checkBox_2, self.checkBox_3, self.checkBox_4, self.checkBox_5, self.checkBox_6]
         self.firstFrame = 0
+        self.actionSave_file_as.triggered.connect(self.save_video_as)
         self.actionOpen_file.triggered.connect(self.open_file)
-        self.photoWoEffects.setPixmap(QPixmap("kot.jpg"))
         self.photoWoEffects.setScaledContents(True)
         self.framesDir = ""
         
@@ -32,7 +35,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             check_box.stateChanged.connect(self.check_if_boxes_checked)
 
         self.check_boxes[0].setText("Gunnar Farneback optical flow")
-        self.check_boxes[1].setText("Edge detection")
+        self.check_boxes[1].setText("Gaussian Blur")
+        self.check_boxes[2].setText("Edge detection")
+
         #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
@@ -75,11 +80,39 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         toolbar.addWidget(button1)
         """
+    def save_video_as(self):
+        fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4)")
+        height, width, channel = self.changedFrames[0].shape
+        frame_size = (int(width), int(height))
+        output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 30, frame_size)
+
+        for frame in self.changedFrames:
+            output.write(frame)
+        
+        output.release()
+        #print(fname)
+
+    def apply_effects_to_video(self):
+        self.changedFrames = self.frames
+        if self.check_boxes[0].isChecked():
+            self.changedFrames = self.effects.gunnar_farneback_optical_flow(self.changedFrames)
+            #self.change_affected_frame(self.changedFrames)
+
+        if self.check_boxes[1].isChecked():
+            self.changedFrames = self.effects.gaussian_blur(self.changedFrames)
+            print("hejka gaussian blur")
+            #self.change_affected_frame(self.changedFrame)
+        
+        
+
     def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
         if self.check_boxes[0].isChecked():
             changedFrame = self.effects.gunnar_farneback_optical_flow_preview(self.mainFrame, self.frames[self.firstFrame + 1])
             self.change_affected_frame(changedFrame)
         if self.check_boxes[1].isChecked():
+            changedFrame = self.effects.gaussian_blur_preview(self.mainFrame)
+            self.change_affected_frame(changedFrame)
+        if self.check_boxes[2].isChecked():
             changedFrame = self.effects.edge_detection(self.mainFrame)
             self.change_affected_frame(changedFrame)
 
@@ -119,16 +152,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.show_frames()
         else:
             return
-        """
-    def update_new_video(self, filename):
-        with open(filename) as f:
-            self.frames = [frame for frame in f]
-            for i in range(5):
-                print(self.frames[i])
-            
-            for idx, _ in enumerate(self.slider_frames):
-                self.slider_frames[idx].setPixmap(QPixmap(self.frames[idx]))
-        """
+
+
 
     def slider_moved(self, place):
         self.firstFrame = min(place, self.framesNumber-5)

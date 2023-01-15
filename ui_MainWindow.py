@@ -36,11 +36,11 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 
 from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QLabel,
 
-    QMainWindow, QMenu, QMenuBar, QSizePolicy,
+    QMainWindow, QMenu, QMenuBar, QPushButton,
 
-    QSlider, QStatusBar, QToolButton, QVBoxLayout,
+    QSizePolicy, QSlider, QStatusBar, QToolButton,
 
-    QWidget)
+    QVBoxLayout, QWidget)
 
 from clickableLabel import ClickableLabel
 
@@ -170,11 +170,17 @@ class Ui_MainWindow(object):
 
         self.groupBox.setGeometry(QRect(0, 0, 211, 341))
 
+        self.pushButtonVideo = QPushButton(self.groupBox)
+
+        self.pushButtonVideo.setObjectName(u"pushButtonVideo")
+
+        self.pushButtonVideo.setGeometry(QRect(40, 260, 131, 41))
+
         self.widget1 = QWidget(self.groupBox)
 
         self.widget1.setObjectName(u"widget1")
 
-        self.widget1.setGeometry(QRect(20, 30, 77, 152))
+        self.widget1.setGeometry(QRect(20, 30, 81, 152))
 
         self.verticalLayout = QVBoxLayout(self.widget1)
 
@@ -308,6 +314,8 @@ class Ui_MainWindow(object):
 
         self.menuFile.addAction(self.actionNew)
 
+
+
         self.retranslateUi(MainWindow)
 
 
@@ -350,6 +358,8 @@ class Ui_MainWindow(object):
 
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Effects", None))
 
+        self.pushButtonVideo.setText(QCoreApplication.translate("MainWindow", u"Apply to a whole video", None))
+
         self.checkBox.setText(QCoreApplication.translate("MainWindow", u"CheckBox", None))
 
         self.checkBox_2.setText(QCoreApplication.translate("MainWindow", u"CheckBox", None))
@@ -376,6 +386,5 @@ class Ui_MainWindow(object):
 
     # retranslateUi
 
-    # akcje - chyba mozna przeniesc gdzies
 
 

@@ -200,12 +200,25 @@
      <property name="title">
       <string>Effects</string>
      </property>
+     <widget class="QPushButton" name="pushButtonVideo">
+      <property name="geometry">
+       <rect>
+        <x>40</x>
+        <y>260</y>
+        <width>131</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Apply to a whole video</string>
+      </property>
+     </widget>
      <widget class="QWidget" name="">
       <property name="geometry">
        <rect>
         <x>20</x>
         <y>30</y>
-        <width>77</width>
+        <width>81</width>
         <height>152</height>
        </rect>
       </property>

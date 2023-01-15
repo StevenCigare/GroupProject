@@ -3,6 +3,7 @@ import numpy as np
 
 
 class Effect():
+
     def gunnar_farneback_optical_flow(self, frames):
 
         changedFrames = []
@@ -51,8 +52,6 @@ class Effect():
         #cv2.destroyAllWindows()
 
     def gunnar_farneback_optical_flow_preview(self, frame, prev_frame):
-        changedFrames = []
-
         # Convert to gray scale
         prvs = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
         # Create mask
@@ -73,7 +72,6 @@ class Effect():
         hsv_mask[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
         # Convert to rgb
         rgb_representation = cv2.cvtColor(hsv_mask, cv2.COLOR_HSV2BGR)
-       
         return rgb_representation
 
     def edge_detection(self, frame):
