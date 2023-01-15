@@ -15,6 +15,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("Custom MainWindow")
         self.effects = Effect()
         # self.mainwindow.resize(1600, 900)
+        self.changedFrame = 0
         self.mainFrame = 0
         self.mainFrame = 0
         self.framesNumber = 0
@@ -31,13 +32,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.framesDir = ""
         
         self.widget1.setFixedWidth(180)
+        #choose filter widget
         for check_box in self.check_boxes:
             check_box.stateChanged.connect(self.check_if_boxes_checked)
 
         self.check_boxes[0].setText("Gunnar Farneback optical flow")
         self.check_boxes[1].setText("Gaussian Blur")
         self.check_boxes[2].setText("Edge detection")
-
+        self.pushButtonVideo.clicked.connect(self.apply_effects_to_video)
         #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
@@ -82,7 +84,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
     def save_video_as(self):
         fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4)")
-        height, width, channel = self.changedFrames[0].shape
+        height, width = self.changedFrames[0].shape[0],self.changedFrames[0].shape[1]
         frame_size = (int(width), int(height))
         output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 30, frame_size)
 
@@ -93,6 +95,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #print(fname)
 
     def apply_effects_to_video(self):
+        print("hejka gaussian blur")
         self.changedFrames = self.frames
         if self.check_boxes[0].isChecked():
             self.changedFrames = self.effects.gunnar_farneback_optical_flow(self.changedFrames)
@@ -102,19 +105,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.changedFrames = self.effects.gaussian_blur(self.changedFrames)
             print("hejka gaussian blur")
             #self.change_affected_frame(self.changedFrame)
-        
+        if self.check_boxes[2].isChecked():
+            self.changedFrame = self.effects.edge_detection(self.changedFrames)
+
         
 
     def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
+        self.changedFrame  = self.mainFrame
+        print(type(self.changedFrame))
         if self.check_boxes[0].isChecked():
-            changedFrame = self.effects.gunnar_farneback_optical_flow_preview(self.mainFrame, self.frames[self.firstFrame + 1])
-            self.change_affected_frame(changedFrame)
+            self.changedFrame = self.effects.gunnar_farneback_optical_flow_preview(self.changedFrame, self.frames[self.firstFrame + 1])
+            self.change_affected_frame(self.changedFrame)
         if self.check_boxes[1].isChecked():
-            changedFrame = self.effects.gaussian_blur_preview(self.mainFrame)
-            self.change_affected_frame(changedFrame)
+            self.changedFrame = self.effects.gaussian_blur_preview(self.changedFrame)
+            self.change_affected_frame(self.changedFrame)
         if self.check_boxes[2].isChecked():
-            changedFrame = self.effects.edge_detection(self.mainFrame)
-            self.change_affected_frame(changedFrame)
+            self.changedFrame = self.effects.edge_detection_preview(self.changedFrame)
+            self.change_affected_frame(self.changedFrame)
 
 
     def change_affected_frame(self, frame):

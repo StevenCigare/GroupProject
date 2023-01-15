@@ -74,19 +74,29 @@ class Effect():
         rgb_representation = cv2.cvtColor(hsv_mask, cv2.COLOR_HSV2BGR)
         return rgb_representation
 
-    def edge_detection(self, frame):
+    def edge_detection_preview(self, frame):
        img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
        img_blur = cv2.GaussianBlur(img_gray,(3,3), 0)
 
        sobel_x = cv2.Sobel(src = img_blur, ddepth=cv2.CV_64F,dx=1,dy=0,ksize=17)
        sobel_y = cv2.Sobel(src = img_blur, ddepth=cv2.CV_64F,dx=0,dy=1,ksize=17)
        sobel_xy = cv2.Sobel(src = img_blur, ddepth=cv2.CV_64F,dx=1,dy=1,ksize=17)
-
        edges = cv2.Canny(image=img_blur, threshold1=5,threshold2=200)
-
        edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
- 
-       
        return edges
 
+    def edge_detection(self, frames):
+        changed_frames = []
+        for frame in frames:
+            changed_frames.append(self.edge_detection_preview(frame))
+    
+    def gaussian_blur(self, frames):
+        changedFrames = []
+        for frame in frames:
+            changedFrames.append(cv2.GaussianBlur(frame, (15,15), 0))
+
+        return changedFrames
+
+    def gaussian_blur_preview(self, frame):
+        return cv2.GaussianBlur(frame, (15,15), 0)
 
