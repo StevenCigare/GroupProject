@@ -34,5 +34,5 @@ def extract(video_path):
         cv2.imwrite(f"{save_path}/{idx}.png", frame)
         frames.append(frame)
         idx += 1
-
-    return frames, save_path
+    idx -= 1
+    return frames, save_path, idx

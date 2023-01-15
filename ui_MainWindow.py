@@ -308,8 +308,6 @@ class Ui_MainWindow(object):
 
         self.menuFile.addAction(self.actionNew)
 
-
-
         self.retranslateUi(MainWindow)
 
 
@@ -378,5 +376,6 @@ class Ui_MainWindow(object):
 
     # retranslateUi
 
+    # akcje - chyba mozna przeniesc gdzies
 
 

@@ -8,6 +8,7 @@ import sys
 def button_clicked(data):
     print("You clicked a button: ", data)
 
+
 app = QApplication(sys.argv)
 
 window = MainWindow(app)
