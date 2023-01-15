@@ -3,6 +3,7 @@ import numpy as np
 
 
 class Effect():
+
     def gunnar_farneback_optical_flow(self, frames):
 
         changedFrames = []
@@ -49,3 +50,37 @@ class Effect():
         return changedFrames
         #capture.release()
         #cv2.destroyAllWindows()
+
+    def gunnar_farneback_optical_flow_preview(self, frame, prev_frame):
+        # Convert to gray scale
+        prvs = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+        # Create mask
+        hsv_mask = np.zeros_like(prev_frame)
+        # Make image saturation to a maximum value
+        hsv_mask[..., 1] = 255
+        
+        # Capture another frame and convert to gray scale
+        next = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+        # Optical flow is now calculated
+        flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        # Compute magnite and angle of 2D vector
+        mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+        # Set image hue value according to the angle of optical flow
+        hsv_mask[..., 0] = ang * 180 / np.pi / 2
+        # Set value as per the normalized magnitude of optical flow
+        hsv_mask[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+        # Convert to rgb
+        rgb_representation = cv2.cvtColor(hsv_mask, cv2.COLOR_HSV2BGR)
+        
+        return rgb_representation
+    
+    def gaussian_blur(self, frames):
+        changedFrames = []
+        for frame in frames:
+            changedFrames.append(cv2.GaussianBlur(frame, (15,15), 0))
+
+        return changedFrames
+    
+    def gaussian_blur_preview(self, frame):
+        return cv2.GaussianBlur(frame, (15,15), 0)

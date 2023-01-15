@@ -1,9 +1,10 @@
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QToolBar, QMessageBox, QFileDialog, QCheckBox
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QToolBar, QMessageBox, QFileDialog, QCheckBox, QSizePolicy
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QPixmap, QImage
 from ui_MainWindow import Ui_MainWindow
 from extract_frames import extract
 from effect import Effect
+import cv2
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -14,19 +15,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("Custom MainWindow")
         self.effects = Effect()
         # self.mainwindow.resize(1600, 900)
+        self.mainFrame = 0
         self.framesNumber = 0
+        self.changedFrame = 0
         self.frames = []
         self.qImages = []
         self.changedFrames = []
         self.slider_frames = [self.label1, self.label2, self.label3, self.label4, self.label5]
         self.check_boxes = [self.checkBox, self.checkBox_2, self.checkBox_3, self.checkBox_4, self.checkBox_5, self.checkBox_6]
         self.firstFrame = 0
+        self.actionSave_file_as.triggered.connect(self.save_video_as)
         self.actionOpen_file.triggered.connect(self.open_file)
-        self.photoWoEffects.setPixmap(QPixmap("kot.jpg"))
         self.photoWoEffects.setScaledContents(True)
         self.framesDir = ""
+        
+        #widget with check boxes and apply button
+        self.widget1.setFixedWidth(180)
 
+        self.pushButtonVideo.clicked.connect(self.apply_effects_to_video)
+
+        self.check_boxes[0].setText("Gunnar Farneback optical flow")
         self.check_boxes[0].stateChanged.connect(self.check_if_boxes_checked)
+
+        self.check_boxes[1].setText("Gaussian Blur")
+        self.check_boxes[1].stateChanged.connect(self.check_if_boxes_checked)
+
         #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
@@ -69,19 +82,55 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         toolbar.addWidget(button1)
         """
+    def save_video_as(self):
+        fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4)")
+        height, width, channel = self.changedFrames[0].shape
+        frame_size = (int(width), int(height))
+        output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc(*'XVID'), 30, frame_size)
+
+        for frame in self.changedFrames:
+            output.write(frame)
+        
+        output.release()
+        #print(fname)
+
+    def apply_effects_to_video(self):
+        self.changedFrames = self.frames
+        if self.check_boxes[0].isChecked():
+            self.changedFrames = self.effects.gunnar_farneback_optical_flow(self.changedFrames)
+            #self.change_affected_frame(self.changedFrames)
+
+        if self.check_boxes[1].isChecked():
+            self.changedFrames = self.effects.gaussian_blur(self.changedFrames)
+            print("hejka gaussian blur")
+            #self.change_affected_frame(self.changedFrame)
+        
+        
+
     def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
         if self.check_boxes[0].isChecked():
-            print("siemanko jestem tutahj")
-            self.changedFrames = self.effects.gunnar_farneback_optical_flow(self.frames)
-            print(len(self.changedFrames))
-            self.update_qImages()
-            print("koniec")
+            self.changedFrame = self.effects.gunnar_farneback_optical_flow_preview(self.mainFrame, self.frames[self.firstFrame + 1])
+            self.change_affected_frame(self.changedFrame)
+
+        if self.check_boxes[1].isChecked():
+            self.changedFrame = self.effects.gaussian_blur_preview(self.mainFrame)
+            self.change_affected_frame(self.changedFrame)
+
+    def change_affected_frame(self, frame):
+        self.photoWithEffects.setPixmap(QPixmap(self.convert_to_qimage(frame)))
 
     def change_main_frame(self, number):
-        self.photoWithEffects.setPixmap(QPixmap(f"{self.framesDir}/{self.firstFrame + number -1}.png"))
+        self.mainFrame = self.frames[self.firstFrame + number -1]
+        self.photoWoEffects.setPixmap(QPixmap(self.convert_to_qimage(self.mainFrame)))
+        self.check_if_boxes_checked()
         if number != 3:
             self.change_frames(number-3)    
-            
+    
+    def convert_to_qimage(self, frame):
+        height, width, _ = frame.shape
+        bytesPerLine = 3 * width
+        return QImage(frame.data, width, height, bytesPerLine, QImage.Format_BGR888)
+
     def open_file(self):
         # Open file dialog
         fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4)")
@@ -90,24 +139,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.frames, self.framesDir, self.framesNumber = extract(fname[0])
             self.changedFrames = self.frames
             self.update_qImages()
+            self.mainFrame = self.frames[2]
             # self.update_new_video(fname[0])
             self.horizontalSlider.setMinimum(0)
             self.horizontalSlider.setMaximum(self.framesNumber)
             self.horizontalSlider.setValue(0)
-            self.photoWithEffects.setPixmap(QPixmap(f"{self.framesDir}/0.png"))
+            self.photoWoEffects.setPixmap(QPixmap(self.convert_to_qimage(self.mainFrame)))
             self.show_frames()
         else:
             return
-        """
-    def update_new_video(self, filename):
-        with open(filename) as f:
-            self.frames = [frame for frame in f]
-            for i in range(5):
-                print(self.frames[i])
-            
-            for idx, _ in enumerate(self.slider_frames):
-                self.slider_frames[idx].setPixmap(QPixmap(self.frames[idx]))
-        """
+
+
 
     def slider_moved(self, place):
         self.firstFrame = min(place, self.framesNumber-5)
@@ -132,9 +174,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def update_qImages(self):   #updating images to show in the application to the ones with effects
         self.qImages.clear()
         for frame in self.changedFrames:
-            height, width, _ = frame.shape
-            bytesPerLine = 3 * width
-            self.qImages.append(QImage(frame.data, width, height, bytesPerLine, QImage.Format_BGR888))
+            self.qImages.append(self.convert_to_qimage(frame))
         self.firstFrame = 0
         print(len(self.qImages))
         self.show_frames()
