@@ -21,16 +21,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.photoWoEffects.setScaledContents(True)
         self.framesDir = ""
 
-        # ----------------------------------------- tutaj dodalem moje akcje ---------------------------------
 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
         self.toolButtonSub.clicked.connect(lambda: self.change_frames(-10))
         self.toolButtonSubOne.clicked.connect(lambda: self.change_frames(-1))
         self.horizontalSlider.valueChanged.connect(self.slider_moved)
-        #self.label1.clicked.connect(lambda: self.change_frames(28))  trzeba zrobic qlabel clickable
+        self.label1.clicked.connect(lambda: self.change_main_frame(1))
+        self.label2.clicked.connect(lambda: self.change_main_frame(2))
+        self.label3.clicked.connect(lambda: self.change_main_frame(3))
+        self.label4.clicked.connect(lambda: self.change_main_frame(4))
+        self.label5.clicked.connect(lambda: self.change_main_frame(5))
 
-        # ----------------------------------------- a tu koniec  -----------------------------------------------------
         # menubar and menus
         """
         menu_bar = self.menuBar()
@@ -60,6 +62,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         toolbar.addWidget(button1)
         """
+
+
+    def change_main_frame(self, number):
+        self.photoWithEffects.setPixmap(QPixmap(f"{self.framesDir}/{self.firstFrame + number -1}.png"))
+        if number != 3:
+            self.change_frames(number-3)
+
 
     def open_file(self):
         # Open file dialog
@@ -94,7 +103,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def show_frames(self):
         for idx, f in enumerate(self.slider_frames):
             f.setPixmap(QPixmap(f"{self.framesDir}/{self.firstFrame + idx}"))
-        # print("teraz pierwsza klatka ma nr " + self.firstFrame.__str__())   #jak sie printuje liczby w pythonie? XD
 
     def change_frames(self, number):
         temp = self.firstFrame
