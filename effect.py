@@ -15,7 +15,7 @@ class Effect():
         hsv_mask[..., 1] = 255
         
         # Till you scan the video
-        for frame in frames[1:]:
+        for frame in frames[1:30]:
             
             # Capture another frame and convert to gray scale
             next = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

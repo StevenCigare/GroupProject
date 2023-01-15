@@ -27,16 +27,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.framesDir = ""
 
         self.check_boxes[0].stateChanged.connect(self.check_if_boxes_checked)
-        # ----------------------------------------- tutaj dodalem moje akcje ---------------------------------
-
+        #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
         self.toolButtonSub.clicked.connect(lambda: self.change_frames(-10))
         self.toolButtonSubOne.clicked.connect(lambda: self.change_frames(-1))
         self.horizontalSlider.valueChanged.connect(self.slider_moved)
-        #self.label1.clicked.connect(lambda: self.change_frames(28))  trzeba zrobic qlabel clickable
+        self.label1.clicked.connect(lambda: self.change_main_frame(1))
+        self.label2.clicked.connect(lambda: self.change_main_frame(2))
+        self.label3.clicked.connect(lambda: self.change_main_frame(3))
+        self.label4.clicked.connect(lambda: self.change_main_frame(4))
+        self.label5.clicked.connect(lambda: self.change_main_frame(5))
 
-        # ----------------------------------------- a tu koniec  -----------------------------------------------------
+        
         # menubar and menus
         """
         menu_bar = self.menuBar()
@@ -74,7 +77,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.update_qImages()
             print("koniec")
 
-    
+    def change_main_frame(self, number):
+        self.photoWithEffects.setPixmap(QPixmap(f"{self.framesDir}/{self.firstFrame + number -1}.png"))
+        if number != 3:
+            self.change_frames(number-3)    
+            
     def open_file(self):
         # Open file dialog
         fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4)")
@@ -125,7 +132,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def update_qImages(self):   #updating images to show in the application to the ones with effects
         self.qImages.clear()
         for frame in self.changedFrames:
-            height, width = frame.shape
+            height, width, _ = frame.shape
             bytesPerLine = 3 * width
             self.qImages.append(QImage(frame.data, width, height, bytesPerLine, QImage.Format_BGR888))
         self.firstFrame = 0

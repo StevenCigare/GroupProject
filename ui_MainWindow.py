@@ -42,7 +42,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QLabel,
 
     QWidget)
 
-
+from clickableLabel import ClickableLabel
 
 class Ui_MainWindow(object):
 
@@ -110,7 +110,7 @@ class Ui_MainWindow(object):
 
         self.toolButtonAdd.setGeometry(QRect(900, 0, 51, 181))
 
-        self.label1 = QLabel(self.widgetFrames)
+        self.label1 = ClickableLabel(self.widgetFrames)
 
         self.label1.setObjectName(u"label1")
 
@@ -118,7 +118,7 @@ class Ui_MainWindow(object):
 
         self.label1.setScaledContents(True)
 
-        self.label2 = QLabel(self.widgetFrames)
+        self.label2 = ClickableLabel(self.widgetFrames)
 
         self.label2.setObjectName(u"label2")
 
@@ -126,7 +126,7 @@ class Ui_MainWindow(object):
 
         self.label2.setScaledContents(True)
 
-        self.label3 = QLabel(self.widgetFrames)
+        self.label3 = ClickableLabel(self.widgetFrames)
 
         self.label3.setObjectName(u"label3")
 
@@ -134,7 +134,7 @@ class Ui_MainWindow(object):
 
         self.label3.setScaledContents(True)
 
-        self.label4 = QLabel(self.widgetFrames)
+        self.label4 = ClickableLabel(self.widgetFrames)
 
         self.label4.setObjectName(u"label4")
 
@@ -142,7 +142,7 @@ class Ui_MainWindow(object):
 
         self.label4.setScaledContents(True)
 
-        self.label5 = QLabel(self.widgetFrames)
+        self.label5 = ClickableLabel(self.widgetFrames)
 
         self.label5.setObjectName(u"label5")
 
