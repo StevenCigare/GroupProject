@@ -1,8 +1,9 @@
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QToolBar, QMessageBox, QFileDialog
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QToolBar, QMessageBox, QFileDialog, QCheckBox
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QPixmap, QImage
 from ui_MainWindow import Ui_MainWindow
 from extract_frames import extract
+from effect import Effect
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -11,16 +12,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.app = app
         self.setWindowTitle("Custom MainWindow")
+        self.effects = Effect()
         # self.mainwindow.resize(1600, 900)
         self.framesNumber = 0
         self.frames = []
+        self.qImages = []
+        self.changedFrames = []
         self.slider_frames = [self.label1, self.label2, self.label3, self.label4, self.label5]
+        self.check_boxes = [self.checkBox, self.checkBox_2, self.checkBox_3, self.checkBox_4, self.checkBox_5, self.checkBox_6]
         self.firstFrame = 0
         self.actionOpen_file.triggered.connect(self.open_file)
         self.photoWoEffects.setPixmap(QPixmap("kot.jpg"))
         self.photoWoEffects.setScaledContents(True)
         self.framesDir = ""
 
+        self.check_boxes[0].stateChanged.connect(self.check_if_boxes_checked)
         # ----------------------------------------- tutaj dodalem moje akcje ---------------------------------
 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
@@ -60,20 +66,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         toolbar.addWidget(button1)
         """
+    def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
+        if self.check_boxes[0].isChecked():
+            print("siemanko jestem tutahj")
+            self.changedFrames = self.effects.gunnar_farneback_optical_flow(self.frames)
+            print(len(self.changedFrames))
+            self.update_qImages()
+            print("koniec")
 
+    
     def open_file(self):
         # Open file dialog
         fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4)")
 
         if fname:
             self.frames, self.framesDir, self.framesNumber = extract(fname[0])
+            self.changedFrames = self.frames
+            self.update_qImages()
             # self.update_new_video(fname[0])
             self.horizontalSlider.setMinimum(0)
             self.horizontalSlider.setMaximum(self.framesNumber)
             self.horizontalSlider.setValue(0)
             self.photoWithEffects.setPixmap(QPixmap(f"{self.framesDir}/0.png"))
-            for idx, f in enumerate(self.slider_frames):
-                f.setPixmap(QPixmap(f"{self.framesDir}/{self.firstFrame + idx}"))
+            self.show_frames()
         else:
             return
         """
@@ -93,8 +108,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def show_frames(self):
         for idx, f in enumerate(self.slider_frames):
-            f.setPixmap(QPixmap(f"{self.framesDir}/{self.firstFrame + idx}"))
-        # print("teraz pierwsza klatka ma nr " + self.firstFrame.__str__())   #jak sie printuje liczby w pythonie? XD
+            print(f"{self.firstFrame}, {idx}")
+            f.setPixmap(QPixmap(self.qImages[self.firstFrame + idx]))  #f"{self.framesDir}/{self.firstFrame + idx}"
+        print(f"teraz pierwsza klatka ma nr {self.firstFrame}")   #jak sie printuje liczby w pythonie? XD
 
     def change_frames(self, number):
         temp = self.firstFrame
@@ -105,6 +121,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.horizontalSlider.setValue(self.firstFrame)
             self.show_frames()
 
+
+    def update_qImages(self):   #updating images to show in the application to the ones with effects
+        self.qImages.clear()
+        for frame in self.changedFrames:
+            height, width = frame.shape
+            bytesPerLine = 3 * width
+            self.qImages.append(QImage(frame.data, width, height, bytesPerLine, QImage.Format_BGR888))
+        self.firstFrame = 0
+        print(len(self.qImages))
+        self.show_frames()
+        
     def button1_clicked(self):
         # could also be .information , .warning, .about
         ret = QMessageBox.critical(self, "Message title", "Critical Message!", QMessageBox.Ok | QMessageBox.Cancel)
