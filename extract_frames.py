@@ -63,8 +63,6 @@ def extract(video_path):
         if ret == False:
             cap.release()
             break
-
-        #cv2.imwrite(f"{save_path}/{idx}.png", frame)
         frames.append(frame)
         idx += 1
     idx -= 1

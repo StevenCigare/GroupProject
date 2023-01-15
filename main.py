@@ -1,6 +1,4 @@
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow
-from button_holder import ButtonHolder
-from RockWidget import RockWidget
 from mainwindow import MainWindow
 import sys
 

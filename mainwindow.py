@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QToolBar, QMessageBox, QFileDialog, QCheckBox
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QToolBar, QMessageBox, QFileDialog, QCheckBox, QSizePolicy
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QPixmap, QImage
 from ui_MainWindow import Ui_MainWindow
@@ -14,6 +14,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("Custom MainWindow")
         self.effects = Effect()
         # self.mainwindow.resize(1600, 900)
+        self.mainFrame = 0
         self.framesNumber = 0
         self.frames = []
         self.qImages = []
@@ -25,8 +26,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.photoWoEffects.setPixmap(QPixmap("kot.jpg"))
         self.photoWoEffects.setScaledContents(True)
         self.framesDir = ""
+        
+        self.widget1.setFixedWidth(180)
+        for check_box in self.check_boxes:
+            check_box.stateChanged.connect(self.check_if_boxes_checked)
 
-        self.check_boxes[0].stateChanged.connect(self.check_if_boxes_checked)
+        self.check_boxes[0].setText("Gunnar Farneback optical flow")
+        self.check_boxes[1].setText("Edge detection")
         #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
@@ -71,17 +77,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
     def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
         if self.check_boxes[0].isChecked():
-            print("siemanko jestem tutahj")
-            self.changedFrames = self.effects.gunnar_farneback_optical_flow(self.frames)
-            print(len(self.changedFrames))
-            self.update_qImages()
-            print("koniec")
+            changedFrame = self.effects.gunnar_farneback_optical_flow_preview(self.mainFrame, self.frames[self.firstFrame + 1])
+            self.change_affected_frame(changedFrame)
+        if self.check_boxes[1].isChecked():
+            changedFrame = self.effects.edge_detection(self.mainFrame)
+            self.change_affected_frame(changedFrame)
+
+
+    def change_affected_frame(self, frame):
+        self.photoWithEffects.setPixmap(QPixmap(self.convert_to_qimage(frame)))
 
     def change_main_frame(self, number):
-        self.photoWithEffects.setPixmap(QPixmap(f"{self.framesDir}/{self.firstFrame + number -1}.png"))
+        self.mainFrame = self.frames[self.firstFrame + number -1]
+        self.photoWoEffects.setPixmap(QPixmap(self.convert_to_qimage(self.mainFrame)))
+        self.check_if_boxes_checked()
         if number != 3:
             self.change_frames(number-3)    
-            
+    
+    def convert_to_qimage(self, frame):
+        height, width = frame.shape[0],frame.shape[1]
+        print(height)
+        print(width)
+        bytesPerLine = 3 * width
+        
+        return QImage(frame.data, width, height, bytesPerLine, QImage.Format_BGR888)
+
     def open_file(self):
         # Open file dialog
         fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4)")
@@ -90,11 +110,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.frames, self.framesDir, self.framesNumber = extract(fname[0])
             self.changedFrames = self.frames
             self.update_qImages()
+            self.mainFrame = self.frames[2]
             # self.update_new_video(fname[0])
             self.horizontalSlider.setMinimum(0)
             self.horizontalSlider.setMaximum(self.framesNumber)
             self.horizontalSlider.setValue(0)
-            self.photoWithEffects.setPixmap(QPixmap(f"{self.framesDir}/0.png"))
+            self.photoWoEffects.setPixmap(QPixmap(self.convert_to_qimage(self.mainFrame)))
             self.show_frames()
         else:
             return
@@ -132,9 +153,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def update_qImages(self):   #updating images to show in the application to the ones with effects
         self.qImages.clear()
         for frame in self.changedFrames:
-            height, width, _ = frame.shape
-            bytesPerLine = 3 * width
-            self.qImages.append(QImage(frame.data, width, height, bytesPerLine, QImage.Format_BGR888))
+            self.qImages.append(self.convert_to_qimage(frame))
         self.firstFrame = 0
         print(len(self.qImages))
         self.show_frames()
