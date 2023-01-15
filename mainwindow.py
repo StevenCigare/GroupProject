@@ -86,7 +86,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4)")
         height, width, channel = self.changedFrames[0].shape
         frame_size = (int(width), int(height))
-        output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc(*'XVID'), 30, frame_size)
+        output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 30, frame_size)
 
         for frame in self.changedFrames:
             output.write(frame)
