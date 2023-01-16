@@ -43,6 +43,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.check_boxes[4].setText("pencil sketch")
         self.check_boxes[5].setText("cartooning")
         self.pushButtonVideo.clicked.connect(self.apply_effects_to_video)
+        self.pushButtonFrame.clicked.connect(self.apply_effects_to_frame)
         #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
@@ -115,6 +116,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.changedFrames = self.effects.cartonning(self.changedFrames)
         print("done")
         
+    def apply_effects_to_frame(self):
+        self.changedFrames = self.frames
+        self.changedFrames[self.firstFrame-1] = self.changedFrame
+       # if self.check_boxes[0].isChecked():
+        #    self.changedFrames[self.firstFrame-1]  = self.effects.gunnar_farneback_optical_flow_preview(self.changedFrame, self.frames[self.firstFrame + 1])
+        #if self.check_boxes[1].isChecked():
+        #    self.changedFrames[self.firstFrame-1]  = self.effects.gaussian_blur_preview(self.changedFrame)
+        #if self.check_boxes[2].isChecked():
+        #    self.changedFrames[self.firstFrame-1]  = self.effects.edge_detection_preview(self.changedFrames)
+        #if self.check_boxes[3].isChecked():
+        #    self.changedFrames[self.firstFrame-1]  = self.effects.sepia_preview(self.changedFrames)
+        #if self.check_boxes[4].isChecked():
+        #    self.changedFrames[self.firstFrame-1]  = self.effects.pencil_sketch_preview(self.changedFrames)
+        #if self.check_boxes[5].isChecked():
+        #    self.changedFrames[self.firstFrame-1]  = self.effects.cartooning_preview(self.changedFrames)
+
 
     def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
         self.changedFrame  = self.mainFrame

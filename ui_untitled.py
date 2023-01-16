@@ -87,6 +87,11 @@ class Ui_MainWindow(object):
         self.pushButtonVideo = QPushButton(self.groupBox)
         self.pushButtonVideo.setObjectName(u"pushButtonVideo")
         self.pushButtonVideo.setGeometry(QRect(40, 260, 131, 41))
+
+        self.pushButtonFrame = QPushButton(self.groupBox)
+        self.pushButtonFrame.setObjectName(u"pushButtonFrame")
+        self.pushButtonFrame.setGeometry(QRect(80, 260, 131, 41))
+
         self.widget1 = QWidget(self.groupBox)
         self.widget1.setObjectName(u"widget1")
         self.widget1.setGeometry(QRect(20, 30, 81, 152))

@@ -174,7 +174,13 @@ class Ui_MainWindow(object):
 
         self.pushButtonVideo.setObjectName(u"pushButtonVideo")
 
-        self.pushButtonVideo.setGeometry(QRect(40, 260, 131, 41))
+        self.pushButtonVideo.setGeometry(QRect(40, 200, 131, 41))
+
+        self.pushButtonFrame = QPushButton(self.groupBox)
+
+        self.pushButtonFrame.setObjectName(u"pushButtonFrame")
+
+        self.pushButtonFrame.setGeometry(QRect(40, 260, 131, 41))
 
         self.widget1 = QWidget(self.groupBox)
 
@@ -359,6 +365,8 @@ class Ui_MainWindow(object):
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Effects", None))
 
         self.pushButtonVideo.setText(QCoreApplication.translate("MainWindow", u"Apply to a whole video", None))
+
+        self.pushButtonFrame.setText(QCoreApplication.translate("MainWindow", u"Apply to a frame", None))
 
         self.checkBox.setText(QCoreApplication.translate("MainWindow", u"CheckBox", None))
 

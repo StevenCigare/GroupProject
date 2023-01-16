@@ -14,10 +14,11 @@ class Effect():
         hsv_mask = np.zeros_like(frames[0])
         # Make image saturation to a maximum value
         hsv_mask[..., 1] = 255
-        
+        i = 0
         # Till you scan the video
         for frame in frames:
-            
+            print(i)
+            i = i + 1
             # Capture another frame and convert to gray scale
             next = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
