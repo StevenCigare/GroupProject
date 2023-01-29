@@ -30,7 +30,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionOpen_file.triggered.connect(self.open_file)
         self.photoWoEffects.setScaledContents(True)
         self.framesDir = ""
-        
+        self.fps = 30
         self.widget1.setFixedWidth(180)
         #choose filter widget
         for check_box in self.check_boxes:
@@ -176,16 +176,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         return QImage(frame.data, width, height, bytesPerLine, QImage.Format_BGR888)
 
+
     def open_file(self):
         # Open file dialog
         fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4)")
 
         if fname:
-            self.frames, self.framesDir, self.framesNumber = extract(fname[0])
+            self.frames, self.framesDir, self.framesNumber,self.fps = extract(fname[0])
+            minute = int((self.framesNumber/self.fps) / 60)
+            second = int(self.framesNumber/self.fps) % 60
+            self.vid_time_total.setText(str(minute)+":"+str(second))
             self.changedFrames = self.frames
             self.update_qImages()
             self.mainFrame = self.frames[2]
-            # self.update_new_video(fname[0])
             self.horizontalSlider.setMinimum(0)
             self.horizontalSlider.setMaximum(self.framesNumber)
             self.horizontalSlider.setValue(0)
@@ -201,10 +204,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show_frames()
 
     def show_frames(self):
+        minute = int((self.firstFrame/self.fps) / 60)
+        print(minute)
+        second = int(self.firstFrame/self.fps) % 60
+        if(self.framesNumber != 0):
+            self.vid_time.setText(str(minute)+":"+str(second))
         for idx, f in enumerate(self.slider_frames):
             print(f"{self.firstFrame}, {idx}")
             f.setPixmap(QPixmap(self.qImages[self.firstFrame + idx]))  #f"{self.framesDir}/{self.firstFrame + idx}"
         print(f"teraz pierwsza klatka ma nr {self.firstFrame}")   #jak sie printuje liczby w pythonie? XD
+
+
 
     def change_frames(self, number):
         temp = self.firstFrame

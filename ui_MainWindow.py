@@ -150,6 +150,28 @@ class Ui_MainWindow(object):
 
         self.label5.setScaledContents(True)
 
+        self.vid_time = QLabel(self.widget)
+        self.vid_time.setFont(QFont('Arial', 20))
+        self.vid_time.setObjectName(u"vid_time")
+
+        self.vid_time.setGeometry(QRect(971/2-10, 210, 151, 181))
+
+
+        self.vid_time.setScaledContents(True)
+
+        self.vid_time_total = QLabel(self.widget)
+        self.vid_time_total.setFont(QFont('Arial', 20))
+        self.vid_time_total.setObjectName(u"vid_time")
+
+        self.vid_time_total.setGeometry(QRect(815, 210, 151, 181))
+
+
+        self.vid_time_zero = QLabel(self.widget)
+        self.vid_time_zero.setFont(QFont('Arial', 20))
+        self.vid_time_zero.setObjectName(u"vid_time")
+        self.vid_time_zero.setText("0:0")
+        self.vid_time_zero.setGeometry(QRect(110, 210, 151, 181))
+
         self.horizontalSlider = QSlider(self.widget)
 
         self.horizontalSlider.setObjectName(u"horizontalSlider")

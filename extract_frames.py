@@ -54,7 +54,8 @@ def extract(video_path):
 
     cap = cv2.VideoCapture(video_path)
     idx = 0
-
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
     frames = []
 
     while True:
@@ -67,4 +68,4 @@ def extract(video_path):
         idx += 1
     idx -= 1
     
-    return frames, save_path, idx
+    return frames, save_path, idx, fps
