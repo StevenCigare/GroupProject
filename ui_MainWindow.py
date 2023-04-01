@@ -52,8 +52,9 @@ class Ui_MainWindow(object):
 
             MainWindow.setObjectName(u"MainWindow")
 
-        MainWindow.resize(1045, 822)
-
+        MainWindow.setFixedSize(1440, 920)
+        MainWindow.setStyleSheet("background-color:#18122B;color: white;font-family:Consolas")
+        
         self.actionSave_file_as = QAction(MainWindow)
 
         self.actionSave_file_as.setObjectName(u"actionSave_file_as")
@@ -71,50 +72,108 @@ class Ui_MainWindow(object):
         self.actionNew.setObjectName(u"actionNew")
 
         self.centralwidget = QWidget(MainWindow)
+        self.centralwidget.setStyleSheet("background-color: #393053;color: white;")
+        self.centralwidget.setObjectName(u"centralwidget;color: white;")
+        self.centralwidget.setGeometry(QRect(0, 22, 1440, 900))
+        
+        self.infoWidget = QGroupBox(self.centralwidget)
+        self.infoWidget.setObjectName(u"infowidget")
+        
+        self.infoWidget.setGeometry(QRect(40, 730, 1350, 130))
+        self.infoWidget.setStyleSheet("#infowidget {border:4px solid #635985;border-radius:10px;font-size:15px}")
 
-        self.centralwidget.setObjectName(u"centralwidget")
+
+        self.vid_time_total = QLabel(self.infoWidget)
+        self.vid_time_total.setObjectName(u"vid_time_total")
+        self.vid_time_total.setGeometry(QRect(20, 30, 151, 20))
+
+        self.vid_time = QLabel(self.infoWidget)
+        self.vid_time.setObjectName(u"vid_time")
+        self.vid_time.setGeometry(QRect(20, 50, 151, 20))
+        self.vid_time.setScaledContents(True)
+
+        self.video_current_frame = QLabel(self.infoWidget)
+        self.video_current_frame.setObjectName(u"vid_current_frame")
+        self.video_current_frame.setGeometry(QRect(20, 70, 151, 20))
+
+        self.video_frame_rate = QLabel(self.infoWidget)
+        self.video_frame_rate.setObjectName(u"video_frame_rate")
+        self.video_frame_rate.setGeometry(QRect(20, 90, 151, 20))
+
+        self.vid_width = QLabel(self.infoWidget)
+        self.vid_width.setObjectName(u"vid_width")
+        self.vid_width.setGeometry(QRect(220, 30, 151, 20))
+        self.vid_width.setScaledContents(True)
+
+        self.vid_height = QLabel(self.infoWidget)
+        self.vid_height.setObjectName(u"vid_height")
+        self.vid_height.setGeometry(QRect(220, 50, 151, 20))
+        self.vid_height.setScaledContents(True)
+
+        self.vid_codec_name = QLabel(self.infoWidget)
+        self.vid_codec_name.setObjectName(u"codec_name")
+        self.vid_codec_name.setGeometry(QRect(220, 70, 151, 20))
+        self.vid_codec_name.setScaledContents(True)
+
+        self.pix_format = QLabel(self.infoWidget)
+        self.pix_format.setObjectName(u"pix_format")
+        self.pix_format.setGeometry(QRect(220, 90, 151, 20))
+        self.pix_format.setScaledContents(True)
+
+        self.bit_rate = QLabel(self.infoWidget)
+        self.bit_rate.setObjectName(u"bit_rate")
+        self.bit_rate.setGeometry(QRect(420, 30, 151, 20))
+        self.bit_rate.setScaledContents(True)
+
+        self.color_space = QLabel(self.infoWidget)
+        self.color_space.setObjectName(u"color_space")
+        self.color_space.setGeometry(QRect(420, 50, 151, 20))
+        self.color_space.setScaledContents(True)
+
+        self.audio_codec_name = QLabel(self.infoWidget)
+        self.audio_codec_name.setObjectName(u"codec_name")
+        self.audio_codec_name.setGeometry(QRect(420, 70, 151, 20))
+        self.audio_codec_name.setScaledContents(True)
+
+        self.sample_rate = QLabel(self.infoWidget)
+        self.sample_rate.setObjectName(u"sample_rate")
+        self.sample_rate.setGeometry(QRect(420, 90, 151, 20))
+        self.sample_rate.setScaledContents(True)
 
         self.widget = QWidget(self.centralwidget)
-
         self.widget.setObjectName(u"widget")
-
-        self.widget.setGeometry(QRect(40, 420, 971, 311))
-
+        self.widget.setGeometry(QRect(40, 360, 1350, 345))
+        self.widget.setStyleSheet("#widget {border:4px solid #635985;border-radius:10px}")
+       
         self.widgetFrames = QWidget(self.widget)
-
         self.widgetFrames.setObjectName(u"widgetFrames")
-
-        self.widgetFrames.setGeometry(QRect(10, 10, 951, 181))
-
+        self.widgetFrames.setGeometry(QRect(10, 10, 1330, 330))
+        
         self.toolButtonSub = QToolButton(self.widgetFrames)
-
         self.toolButtonSub.setObjectName(u"toolButtonSub")
-
-        self.toolButtonSub.setGeometry(QRect(0, 0, 51, 181))
-
+        self.toolButtonSub.setStyleSheet("background-color: #443C68")
+        self.toolButtonSub.setGeometry(QRect(0, 20, 75, 180))
+        
         self.toolButtonSubOne = QToolButton(self.widgetFrames)
-
         self.toolButtonSubOne.setObjectName(u"toolButtonSubOne")
-
-        self.toolButtonSubOne.setGeometry(QRect(50, 0, 51, 181))
+        self.toolButtonSubOne.setStyleSheet("background-color: #443C68")
+        self.toolButtonSubOne.setGeometry(QRect(75, 20, 75, 180))
 
         self.toolButtonAddOne = QToolButton(self.widgetFrames)
-
         self.toolButtonAddOne.setObjectName(u"toolButtonAddOne")
-
-        self.toolButtonAddOne.setGeometry(QRect(850, 0, 51, 181))
+        self.toolButtonAddOne.setStyleSheet("background-color: #443C68")
+        self.toolButtonAddOne.setGeometry(QRect(1180, 20, 75, 180))
 
         self.toolButtonAdd = QToolButton(self.widgetFrames)
-
         self.toolButtonAdd.setObjectName(u"toolButtonAdd")
-
-        self.toolButtonAdd.setGeometry(QRect(900, 0, 51, 181))
+        self.toolButtonAdd.setStyleSheet("background-color: #443C68")
+        self.toolButtonAdd.setGeometry(QRect(1255, 20, 75, 180))
 
         self.label1 = ClickableLabel(self.widgetFrames)
 
         self.label1.setObjectName(u"label1")
 
-        self.label1.setGeometry(QRect(100, 0, 151, 181))
+        self.label1.setGeometry(QRect(150, 20, 205, 180))
 
         self.label1.setScaledContents(True)
 
@@ -122,7 +181,7 @@ class Ui_MainWindow(object):
 
         self.label2.setObjectName(u"label2")
 
-        self.label2.setGeometry(QRect(250, 0, 151, 181))
+        self.label2.setGeometry(QRect(356, 20, 205, 180))
 
         self.label2.setScaledContents(True)
 
@@ -130,7 +189,7 @@ class Ui_MainWindow(object):
 
         self.label3.setObjectName(u"label3")
 
-        self.label3.setGeometry(QRect(400, 0, 151, 181))
+        self.label3.setGeometry(QRect(562, 20, 205, 180))
 
         self.label3.setScaledContents(True)
 
@@ -138,7 +197,7 @@ class Ui_MainWindow(object):
 
         self.label4.setObjectName(u"label4")
 
-        self.label4.setGeometry(QRect(550, 0, 151, 181))
+        self.label4.setGeometry(QRect(768, 20, 205, 180))
 
         self.label4.setScaledContents(True)
 
@@ -146,37 +205,16 @@ class Ui_MainWindow(object):
 
         self.label5.setObjectName(u"label5")
 
-        self.label5.setGeometry(QRect(700, 0, 151, 181))
+        self.label5.setGeometry(QRect(974, 20, 205, 180))
 
         self.label5.setScaledContents(True)
 
-        self.vid_time = QLabel(self.widget)
-        self.vid_time.setFont(QFont('Arial', 20))
-        self.vid_time.setObjectName(u"vid_time")
-
-        self.vid_time.setGeometry(QRect(971/2-10, 210, 151, 181))
-
-
-        self.vid_time.setScaledContents(True)
-
-        self.vid_time_total = QLabel(self.widget)
-        self.vid_time_total.setFont(QFont('Arial', 20))
-        self.vid_time_total.setObjectName(u"vid_time")
-
-        self.vid_time_total.setGeometry(QRect(815, 210, 151, 181))
-
-
-        self.vid_time_zero = QLabel(self.widget)
-        self.vid_time_zero.setFont(QFont('Arial', 20))
-        self.vid_time_zero.setObjectName(u"vid_time")
-        self.vid_time_zero.setText("0:0")
-        self.vid_time_zero.setGeometry(QRect(110, 210, 151, 181))
 
         self.horizontalSlider = QSlider(self.widget)
 
         self.horizontalSlider.setObjectName(u"horizontalSlider")
 
-        self.horizontalSlider.setGeometry(QRect(120, 230, 721, 51))
+        self.horizontalSlider.setGeometry(QRect(120, 245, 1115, 75))
 
         self.horizontalSlider.setOrientation(Qt.Horizontal)
 
@@ -184,24 +222,23 @@ class Ui_MainWindow(object):
 
         self.widgetEffectsAndFrame.setObjectName(u"widgetEffectsAndFrame")
 
-        self.widgetEffectsAndFrame.setGeometry(QRect(10, 0, 1021, 341))
-
+        self.widgetEffectsAndFrame.setGeometry(QRect(10, 0, 1440, 360))
         self.groupBox = QGroupBox(self.widgetEffectsAndFrame)
-
+        
         self.groupBox.setObjectName(u"groupBox")
-
-        self.groupBox.setGeometry(QRect(0, 0, 211, 341))
+        self.groupBox.setStyleSheet("#groupBox {margin:0px; border:4px solid #635985;border-radius:10px;font-size:15px}")
+        self.groupBox.setGeometry(QRect(0, 10, 210, 330))
 
         self.pushButtonVideo = QPushButton(self.groupBox)
 
         self.pushButtonVideo.setObjectName(u"pushButtonVideo")
-
+        self.pushButtonVideo.setStyleSheet("background-color: #443C68")
         self.pushButtonVideo.setGeometry(QRect(40, 200, 131, 41))
 
         self.pushButtonFrame = QPushButton(self.groupBox)
 
         self.pushButtonFrame.setObjectName(u"pushButtonFrame")
-
+        self.pushButtonFrame.setStyleSheet("background-color: #443C68")
         self.pushButtonFrame.setGeometry(QRect(40, 260, 131, 41))
 
         self.widget1 = QWidget(self.groupBox)
@@ -279,16 +316,18 @@ class Ui_MainWindow(object):
         self.photoWithEffects = QLabel(self.widgetEffectsAndFrame)
 
         self.photoWithEffects.setObjectName(u"photoWithEffects")
-
-        self.photoWithEffects.setGeometry(QRect(210, 0, 451, 341))
+        self.photoWithEffects.setStyleSheet("margin:5px; border:4px solid #635985;border-radius:5px")
+        self.photoWithEffects.setAlignment(Qt.AlignCenter)
+        self.photoWithEffects.setGeometry(QRect(240, 7, 580, 340))
 
         self.photoWithEffects.setScaledContents(True)
 
         self.photoWoEffects = QLabel(self.widgetEffectsAndFrame)
 
         self.photoWoEffects.setObjectName(u"photoWoEffects")
-
-        self.photoWoEffects.setGeometry(QRect(660, 0, 361, 341))
+        self.photoWoEffects.setStyleSheet("margin:5px; border:4px solid #635985;border-radius:5px")
+        self.photoWoEffects.setAlignment(Qt.AlignCenter)
+        self.photoWoEffects.setGeometry(QRect(840, 7, 580, 340))
 
         self.photoWoEffects.setScaledContents(True)
 
@@ -298,7 +337,7 @@ class Ui_MainWindow(object):
 
         self.menubar.setObjectName(u"menubar")
 
-        self.menubar.setGeometry(QRect(0, 0, 1045, 22))
+        self.menubar.setGeometry(QRect(0, 0, 1440, 22))
 
         self.menuFile = QMenu(self.menubar)
 
@@ -383,12 +422,11 @@ class Ui_MainWindow(object):
         self.label4.setText("")
 
         self.label5.setText("")
-
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Effects", None))
 
-        self.pushButtonVideo.setText(QCoreApplication.translate("MainWindow", u"Apply to a whole video", None))
+        self.pushButtonVideo.setText(QCoreApplication.translate("MainWindow", u"Apply to video", None))
 
-        self.pushButtonFrame.setText(QCoreApplication.translate("MainWindow", u"Apply to a frame", None))
+        self.pushButtonFrame.setText(QCoreApplication.translate("MainWindow", u"Apply to frame", None))
 
         self.checkBox.setText(QCoreApplication.translate("MainWindow", u"CheckBox", None))
 
@@ -401,10 +439,9 @@ class Ui_MainWindow(object):
         self.checkBox_5.setText(QCoreApplication.translate("MainWindow", u"CheckBox", None))
 
         self.checkBox_6.setText(QCoreApplication.translate("MainWindow", u"CheckBox", None))
+        self.photoWithEffects.setText("Frame With effects")
 
-        self.photoWithEffects.setText("")
-
-        self.photoWoEffects.setText("")
+        self.photoWoEffects.setText("Frame Original")
 
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
 
