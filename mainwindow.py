@@ -6,11 +6,36 @@ from extract_frames import extract
 from effect import Effect
 from custom_thread import CustomThread
 import cv2
+
 import numpy as np
 import time
 from LoadingWindow import Ui_LoadingWindow
 import threading
+import os
+import ffmpeg
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
 
+    QMetaObject, QObject, QPoint, QRect,
+
+    QSize, QTime, QUrl, Qt)
+
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+
+    QCursor, QFont, QFontDatabase, QGradient,
+
+    QIcon, QImage, QKeySequence, QLinearGradient,
+
+    QPainter, QPalette, QPixmap, QRadialGradient,
+
+    QTransform)
+
+from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QLabel,
+
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+
+    QSizePolicy, QSlider, QStatusBar, QToolButton,
+
+    QVBoxLayout, QWidget)
 NO_THREADS = 3
 FPS_SAVE = 25
 
@@ -31,6 +56,8 @@ def multi_thread(frames, func):
     
     
     return sum(results, [])            # combine all changed frames and return 
+
+
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -126,7 +153,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
     def apply_effects_to_video(self):
-        start = time.time()
+
         self.changedFrames = self.frames
         if self.check_boxes[0].isChecked():
             self.changedFrames = multi_thread(self.changedFrames, self.effects.gunnar_farneback_optical_flow)
@@ -140,10 +167,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.changedFrames = multi_thread(self.changedFrames, self.effects.pencil_sketch)
         if self.check_boxes[5].isChecked():
             self.changedFrames = multi_thread(self.changedFrames, self.effects.cartonning)
-        end = time.time()
-        print('TIME IS: ')
-        print(end - start)
-        print("done")
         
     def apply_effects_to_frame(self):
         self.changedFrames = self.frames
@@ -164,7 +187,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
         self.changedFrame  = self.mainFrame
-        print(type(self.changedFrame))
         if self.check_boxes[0].isChecked():
             self.changedFrame = self.effects.gunnar_farneback_optical_flow_preview(self.changedFrame, self.frames[self.firstFrame + 1])
             self.change_affected_frame(self.changedFrame)
@@ -202,26 +224,43 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         bytesPerLine = 3 * width
         
         return QImage(frame.data, width, height, bytesPerLine, QImage.Format_BGR888)
-
-
+    
+    def set_video_info(self,fname):
+        image_data = ffmpeg.probe(fname)["streams"]  
+       # print(image_data)
+        #print(type(image_data))
+       # print(type(image_data[0]))
+        print(image_data[1])
+        self.infoWidget.setTitle(QCoreApplication.translate("MainWindow", "Details: "+os.path.basename(fname),None))
+        self.vid_time_total.setText("video length: " + str(int(float(image_data[0]['duration'])))+str(" s"))
+        self.video_current_frame.setText("total frames:"+ str(self.framesNumber))
+        self.video_frame_rate.setText("frame rate: "+str(self.fps)+"/s")
+        self.vid_height.setText("frame width: "+ str(self.frames[0].shape[0])+" px" )
+        self.vid_width.setText("frame width: "+ str(self.frames[0].shape[1])+" px" )
+        self.vid_codec_name.setText("video codec: "+ image_data[0]['codec_name'])
+        self.pix_format.setText("pixel format: "+image_data[0]['pix_fmt'])
+        self.bit_rate.setText("video bit rate: "+image_data[0]['bit_rate'])
+        self.color_space.setText("color space: " + image_data[0]['color_space'])
+        self.audio_codec_name.setText("audio codec: " + image_data[1]['codec_name'])
+        self.sample_rate.setText("audio freq: " + image_data[1]['sample_rate'] +"hz")
     def open_file(self):
         # Open file dialog
         
         fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4)")
-
         if fname:
             self.frames, self.framesDir, self.framesNumber,self.fps = extract(fname[0])
             minute = int((self.framesNumber/self.fps) / 60)
             second = int(self.framesNumber/self.fps) % 60
-            self.vid_time_total.setText(str(minute)+":"+str(second))
             self.changedFrames = self.frames
             self.update_qImages()
+            self.set_video_info(fname[0])
             self.mainFrame = self.frames[2]
             self.horizontalSlider.setMinimum(0)
             self.horizontalSlider.setMaximum(self.framesNumber)
             self.horizontalSlider.setValue(0)
             self.photoWoEffects.setPixmap(QPixmap(self.convert_to_qimage(self.mainFrame)))
             self.show_frames()
+
         else:
             return
 
@@ -233,14 +272,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def show_frames(self):
         minute = int((self.firstFrame/self.fps) / 60)
-        print(minute)
         second = int(self.firstFrame/self.fps) % 60
+        self.video_current_frame.setText("current frame: "+ str(self.firstFrame))
         if(self.framesNumber != 0):
-            self.vid_time.setText(str(minute)+":"+str(second))
+            self.vid_time.setText("currenttly at: "+str(minute)+":"+str(second))
         for idx, f in enumerate(self.slider_frames):
-            print(f"{self.firstFrame}, {idx}")
             f.setPixmap(QPixmap(self.qImages[self.firstFrame + idx]))  #f"{self.framesDir}/{self.firstFrame + idx}"
-        print(f"teraz pierwsza klatka ma nr {self.firstFrame}")   #jak sie printuje liczby w pythonie? XD
 
 
 
@@ -259,7 +296,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for frame in self.changedFrames:
             self.qImages.append(self.convert_to_qimage(frame))
         self.firstFrame = 0
-        print(len(self.qImages))
         self.show_frames()
         
     def button1_clicked(self):
