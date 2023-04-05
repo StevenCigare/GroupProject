@@ -4,7 +4,33 @@ from PySide6.QtGui import QPixmap, QImage
 from ui_MainWindow import Ui_MainWindow
 from extract_frames import extract
 from effect import Effect
+from custom_thread import CustomThread
 import cv2
+import numpy as np
+import time
+from LoadingWindow import Ui_LoadingWindow
+import threading
+
+NO_THREADS = 3
+FPS_SAVE = 25
+
+def multi_thread(frames, func):
+    sliced_list = np.array_split(frames, NO_THREADS)    # split the array to equal number of chunks
+    threads = []
+    results = [[] for _ in range(NO_THREADS)]   # array for results
+    print("length")
+    print(len(sliced_list))
+    
+    for portion in sliced_list:
+        print(len(portion))
+        threads.append(CustomThread(target=func, args=(portion,)))   #start threads
+        threads[-1].start()
+    
+    for idx, thread in enumerate(threads):
+        results[idx] = thread.join()    # save changed frames from every thread
+    
+    
+    return sum(results, [])            # combine all changed frames and return 
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -32,6 +58,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.framesDir = ""
         self.fps = 30
         self.widget1.setFixedWidth(180)
+        
         #choose filter widget
         for check_box in self.check_boxes:
             check_box.stateChanged.connect(self.check_if_boxes_checked)
@@ -87,33 +114,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         toolbar.addWidget(button1)
         """
     def save_video_as(self):
-        print("siema")
         fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4)")
         height, width = self.changedFrames[0].shape[0],self.changedFrames[0].shape[1]
         frame_size = (int(width), int(height))
-        output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 30, frame_size)
+        output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), FPS_SAVE, frame_size)
     
         for frame in self.changedFrames:
             output.write(frame)
         
         output.release()
-        #print(fname)
+
 
     def apply_effects_to_video(self):
-        print("hejka gaussian blur")
+        start = time.time()
         self.changedFrames = self.frames
         if self.check_boxes[0].isChecked():
-            self.changedFrames = self.effects.gunnar_farneback_optical_flow(self.changedFrames)
+            self.changedFrames = multi_thread(self.changedFrames, self.effects.gunnar_farneback_optical_flow)
         if self.check_boxes[1].isChecked():
-            self.changedFrames = self.effects.gaussian_blur(self.changedFrames)
+            self.changedFrames = multi_thread(self.changedFrames, self.effects.gaussian_blur)
         if self.check_boxes[2].isChecked():
-            self.changedFrames = self.effects.edge_detection(self.changedFrames)
+            self.changedFrames = multi_thread(self.changedFrames, self.effects.edge_detection)
         if self.check_boxes[3].isChecked():
-            self.changedFrames = self.effects.sepia(self.changedFrames)
+            self.changedFrames = multi_thread(self.changedFrames, self.effects.sepia)
         if self.check_boxes[4].isChecked():
-            self.changedFrames = self.effects.pencil_sketch(self.changedFrames)
+            self.changedFrames = multi_thread(self.changedFrames, self.effects.pencil_sketch)
         if self.check_boxes[5].isChecked():
-            self.changedFrames = self.effects.cartonning(self.changedFrames)
+            self.changedFrames = multi_thread(self.changedFrames, self.effects.cartonning)
+        end = time.time()
+        print('TIME IS: ')
+        print(end - start)
         print("done")
         
     def apply_effects_to_frame(self):
@@ -170,8 +199,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def convert_to_qimage(self, frame):
         height, width = frame.shape[0],frame.shape[1]
-        print(height)
-        print(width)
         bytesPerLine = 3 * width
         
         return QImage(frame.data, width, height, bytesPerLine, QImage.Format_BGR888)
@@ -179,6 +206,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def open_file(self):
         # Open file dialog
+        
         fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4)")
 
         if fname:

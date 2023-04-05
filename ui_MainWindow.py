@@ -1,28 +1,8 @@
-# -*- coding: utf-8 -*-
-
-
-
-################################################################################
-
-## Form generated from reading UI file 'untitled.ui'
-
-##
-
-## Created by: Qt User Interface Compiler version 6.4.2
-
-##
-
-## WARNING! All changes made in this file will be lost when recompiling UI file!
-
-################################################################################
-
-
-
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
 
     QMetaObject, QObject, QPoint, QRect,
 
-    QSize, QTime, QUrl, Qt)
+    QSize, QTime, QUrl, Qt, QFile)
 
 from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 
@@ -40,9 +20,13 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QLabel,
 
     QSizePolicy, QSlider, QStatusBar, QToolButton,
 
-    QVBoxLayout, QWidget)
+    QVBoxLayout, QWidget, QSplashScreen)
+
+from PySide6.QtUiTools import QUiLoader
 
 from clickableLabel import ClickableLabel
+
+
 
 class Ui_MainWindow(object):
 
