@@ -70,9 +70,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # self.mainwindow.resize(1600, 900)
         self.changedFrame = 0
         self.mainFrame = 0
-        self.mainFrame = 0
+        self.currentMainNumber = -1
+        self.applyFromFrame = 0
         self.framesNumber = 0
-        self.changedFrame = 0
         self.frames = []
         self.qImages = []
         self.changedFrames = []
@@ -93,11 +93,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.check_boxes[0].setText("Gunnar Farneback optical flow")
         self.check_boxes[1].setText("Gaussian Blur")
         self.check_boxes[2].setText("Edge detection")
-        self.check_boxes[3].setText("sempia")
+        self.check_boxes[3].setText("sepia")
         self.check_boxes[4].setText("pencil sketch")
         self.check_boxes[5].setText("cartooning")
         self.pushButtonVideo.clicked.connect(self.apply_effects_to_video)
         self.pushButtonFrame.clicked.connect(self.apply_effects_to_frame)
+        self.pushButtonFrom.clicked.connect(self.select_from_frame)
+        self.pushButtonTo.clicked.connect(self.apply_effects_to_part)
         #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
@@ -151,6 +153,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         output.release()
 
+    
+    def select_from_frame(self):
+        self.applyFromFrame = self.currentMainNumber
+        
+    def apply_effects_to_part(self):
+        if self.applyFromFrame == -1 or self.applyFromFrame> self.currentMainNumber:
+            return
+        if self.check_boxes[0].isChecked():
+            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.gunnar_farneback_optical_flow)
+        if self.check_boxes[1].isChecked():
+            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.gaussian_blur)
+        if self.check_boxes[2].isChecked():
+            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.edge_detection)
+        if self.check_boxes[3].isChecked():
+            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.sepia)
+        if self.check_boxes[4].isChecked():
+            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.pencil_sketch)
+        if self.check_boxes[5].isChecked():
+            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.cartonning)
 
     def apply_effects_to_video(self):
 
@@ -206,14 +227,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.changedFrame = self.effects.cartooning_preview(self.changedFrame)
             self.change_affected_frame(self.changedFrame)
 
-
-
-
     def change_affected_frame(self, frame):
         self.photoWithEffects.setPixmap(QPixmap(self.convert_to_qimage(frame)))
 
     def change_main_frame(self, number):
-        self.mainFrame = self.frames[self.firstFrame + number -1]
+        self.currentMainNumber = self.firstFrame + number -1
+        self.mainFrame = self.frames[self.currentMainNumber]
         self.photoWoEffects.setPixmap(QPixmap(self.convert_to_qimage(self.mainFrame)))
         self.check_if_boxes_checked()
         if number != 3:
