@@ -217,13 +217,25 @@ class Ui_MainWindow(object):
 
         self.pushButtonVideo.setObjectName(u"pushButtonVideo")
         self.pushButtonVideo.setStyleSheet("background-color: #443C68")
-        self.pushButtonVideo.setGeometry(QRect(40, 200, 131, 41))
+        self.pushButtonVideo.setGeometry(QRect(40, 200, 131, 31))
 
         self.pushButtonFrame = QPushButton(self.groupBox)
 
         self.pushButtonFrame.setObjectName(u"pushButtonFrame")
         self.pushButtonFrame.setStyleSheet("background-color: #443C68")
-        self.pushButtonFrame.setGeometry(QRect(40, 260, 131, 41))
+        self.pushButtonFrame.setGeometry(QRect(40, 240, 131, 31))
+
+        self.pushButtonFrom = QPushButton(self.groupBox)
+
+        self.pushButtonFrom.setObjectName(u"pushButtonFrom")
+        self.pushButtonFrom.setStyleSheet("background-color: #443C68")
+        self.pushButtonFrom.setGeometry(QRect(40, 280, 60, 31))
+
+        self.pushButtonTo = QPushButton(self.groupBox)
+
+        self.pushButtonTo.setObjectName(u"pushButtonTo")
+        self.pushButtonTo.setStyleSheet("background-color: #443C68")
+        self.pushButtonTo.setGeometry(QRect(110, 280, 60, 31))
 
         self.widget1 = QWidget(self.groupBox)
 
@@ -411,6 +423,10 @@ class Ui_MainWindow(object):
         self.pushButtonVideo.setText(QCoreApplication.translate("MainWindow", u"Apply to video", None))
 
         self.pushButtonFrame.setText(QCoreApplication.translate("MainWindow", u"Apply to frame", None))
+
+        self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From", None))
+
+        self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To", None))
 
         self.checkBox.setText(QCoreApplication.translate("MainWindow", u"CheckBox", None))
 
