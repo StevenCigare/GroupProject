@@ -259,7 +259,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pix_format.setText("pixel format: "+image_data[0]['pix_fmt'])
         self.bit_rate.setText("video bit rate: "+image_data[0]['bit_rate'])
         self.color_space.setText("color space: " + image_data[0]['color_space'])
-        if(image_data.len>1):
+        if(len(image_data)>1):
             self.audio_codec_name.setText("audio codec: " + image_data[1]['codec_name'])
             self.sample_rate.setText("audio freq: " + image_data[1]['sample_rate'] +"hz")
     def open_file(self):
