@@ -78,7 +78,8 @@ def extract(video_path):
     create_dir(save_path)
 
     cap = cv2.VideoCapture(video_path)
-    global idx
+    global idx 
+    idx = 0
     no_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     fps = cap.get(cv2.CAP_PROP_FPS)
     print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
