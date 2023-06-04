@@ -72,6 +72,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.mainFrame = 0
         self.currentMainNumber = -1
         self.applyFromFrame = 0
+        self.applyToFrame = 0
         self.framesNumber = 0
         self.frames = []
         self.qImages = []
@@ -99,7 +100,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButtonVideo.clicked.connect(self.apply_effects_to_video)
         self.pushButtonFrame.clicked.connect(self.apply_effects_to_frame)
         self.pushButtonFrom.clicked.connect(self.select_from_frame)
-        self.pushButtonTo.clicked.connect(self.apply_effects_to_part)
+        self.pushButtonTo.clicked.connect(self.select_To_frame)
+        self.pushButtonFrames.clicked.connect(self.apply_effects_to_part)
         #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
@@ -143,7 +145,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         toolbar.addWidget(button1)
         """
     def save_video_as(self):
-        fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4)")
+        fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4);;AVI Files (*.avi);;MOV Files (*.mov)")
         height, width = self.changedFrames[0].shape[0],self.changedFrames[0].shape[1]
         frame_size = (int(width), int(height))
         output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), FPS_SAVE, frame_size)
@@ -156,22 +158,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def select_from_frame(self):
         self.applyFromFrame = self.currentMainNumber
+        self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From: {}".format(self.applyFromFrame+1), None))
+
+    
+    def select_To_frame(self):
+        self.applyToFrame = self.currentMainNumber
+        self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {}".format(self.applyToFrame+1), None))
+        
         
     def apply_effects_to_part(self):
-        if self.applyFromFrame == -1 or self.applyFromFrame> self.currentMainNumber:
-            return
+        if self.applyFromFrame > self.applyToFrame:
+            (self.applyFromFrame, self.applyToFrame) = ( self.applyToFrame, self.applyFromFrame)
+            self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {}".format(self.applyToFrame+1), None))
+            self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From: {}".format(self.applyFromFrame+1), None))
         if self.check_boxes[0].isChecked():
-            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.gunnar_farneback_optical_flow)
+            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.gunnar_farneback_optical_flow)
         if self.check_boxes[1].isChecked():
-            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.gaussian_blur)
+            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.gaussian_blur)
         if self.check_boxes[2].isChecked():
-            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.edge_detection)
+            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.edge_detection)
         if self.check_boxes[3].isChecked():
-            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.sepia)
+            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.sepia)
         if self.check_boxes[4].isChecked():
-            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.pencil_sketch)
+            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.pencil_sketch)
         if self.check_boxes[5].isChecked():
-            self.changedFrames[self.applyFromFrame:self.currentMainNumber+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.currentMainNumber+1], self.effects.cartonning)
+            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.cartonning)
+        self.update_qImages()
+        self.show_frames()
 
     def apply_effects_to_video(self):
 
@@ -258,16 +271,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.vid_codec_name.setText("video codec: "+ image_data[0]['codec_name'])
         self.pix_format.setText("pixel format: "+image_data[0]['pix_fmt'])
         self.bit_rate.setText("video bit rate: "+image_data[0]['bit_rate'])
-        self.color_space.setText("color space: " + image_data[0]['color_space'])
+        #self.color_space.setText("color space: " + image_data[0]['color_space']) not working for avi and mov files
         if(len(image_data)>1):
             self.audio_codec_name.setText("audio codec: " + image_data[1]['codec_name'])
             self.sample_rate.setText("audio freq: " + image_data[1]['sample_rate'] +"hz")
     def open_file(self):
         # Open file dialog
         
-        fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4)")
+        fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4);;MOV Files (*.mov);;AVI Files (*.avi)")
         if fname:
             self.frames, self.framesDir, self.framesNumber,self.fps = extract(fname[0])
+            self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From: 1", None))
+            self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {} ".format(self.framesNumber), None))
             minute = int((self.framesNumber/self.fps) / 60)
             second = int(self.framesNumber/self.fps) % 60
             self.changedFrames = self.frames
@@ -292,7 +307,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def show_frames(self):
         minute = int((self.firstFrame/self.fps) / 60)
         second = int(self.firstFrame/self.fps) % 60
-        self.video_current_frame.setText("current frame: "+ str(self.firstFrame))
+        self.video_current_frame.setText("current frame: "+ str(self.firstFrame+3))
         if(self.framesNumber != 0):
             self.vid_time.setText("currenttly at: "+str(minute)+":"+str(second))
         for idx, f in enumerate(self.slider_frames):
@@ -314,7 +329,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.qImages.clear()
         for frame in self.changedFrames:
             self.qImages.append(self.convert_to_qimage(frame))
-        self.firstFrame = 0
+        #self.firstFrame = 0
         self.show_frames()
         
     def button1_clicked(self):
