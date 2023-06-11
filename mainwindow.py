@@ -6,6 +6,7 @@ from extract_frames import extract
 from effect import Effect
 from custom_thread import CustomThread
 import cv2
+import copy
 
 import numpy as np
 import time
@@ -74,9 +75,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.applyFromFrame = 0
         self.applyToFrame = 0
         self.framesNumber = 0
+        self.previousFramesNumber = 0
+        self.baseFramesNumber = 0
         self.frames = []
         self.qImages = []
         self.changedFrames = []
+        self.previousFrames = []  #to revert changes
         self.slider_frames = [self.label1, self.label2, self.label3, self.label4, self.label5]
         self.check_boxes = [self.checkBox, self.checkBox_2, self.checkBox_3, self.checkBox_4, self.checkBox_5, self.checkBox_6]
         self.firstFrame = 0
@@ -102,6 +106,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButtonFrom.clicked.connect(self.select_from_frame)
         self.pushButtonTo.clicked.connect(self.select_To_frame)
         self.pushButtonFrames.clicked.connect(self.apply_effects_to_part)
+        self.pushButtonCut.clicked.connect(self.cut_frames)
+        self.pushButtonRevert.clicked.connect(self.revert_changes)
         #frame choice widget 
         self.toolButtonAddOne.released.connect(lambda: self.change_frames(1))
         self.toolButtonAdd.clicked.connect(lambda: self.change_frames(10))
@@ -167,6 +173,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         
     def apply_effects_to_part(self):
+        self.previousFrames = copy.deepcopy(self.changedFrames)
         if self.applyFromFrame > self.applyToFrame:
             (self.applyFromFrame, self.applyToFrame) = ( self.applyToFrame, self.applyFromFrame)
             self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {}".format(self.applyToFrame+1), None))
@@ -187,8 +194,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show_frames()
 
     def apply_effects_to_video(self):
-
-        self.changedFrames = self.frames
+        self.previousFrames = copy.deepcopy(self.changedFrames)
         if self.check_boxes[0].isChecked():
             self.changedFrames = multi_thread(self.changedFrames, self.effects.gunnar_farneback_optical_flow)
         if self.check_boxes[1].isChecked():
@@ -201,10 +207,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.changedFrames = multi_thread(self.changedFrames, self.effects.pencil_sketch)
         if self.check_boxes[5].isChecked():
             self.changedFrames = multi_thread(self.changedFrames, self.effects.cartonning)
+        self.update_qImages()
+        self.show_frames()
         
     def apply_effects_to_frame(self):
-        self.changedFrames = self.frames
+        self.previousFrames = copy.deepcopy(self.changedFrames)
         self.changedFrames[self.firstFrame-1] = self.changedFrame
+        self.update_qImages()
+        self.show_frames()
        # if self.check_boxes[0].isChecked():
         #    self.changedFrames[self.firstFrame-1]  = self.effects.gunnar_farneback_optical_flow_preview(self.changedFrame, self.frames[self.firstFrame + 1])
         #if self.check_boxes[1].isChecked():
@@ -245,7 +255,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def change_main_frame(self, number):
         self.currentMainNumber = self.firstFrame + number -1
-        self.mainFrame = self.frames[self.currentMainNumber]
+        self.mainFrame = self.changedFrames[self.currentMainNumber]
         self.photoWoEffects.setPixmap(QPixmap(self.convert_to_qimage(self.mainFrame)))
         self.check_if_boxes_checked()
         if number != 3:
@@ -281,11 +291,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4);;MOV Files (*.mov);;AVI Files (*.avi)")
         if fname:
             self.frames, self.framesDir, self.framesNumber,self.fps = extract(fname[0])
+            self.baseFramesNumber = self.framesNumber
+            self.previousFramesNumber = self.framesNumber
             self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From: 1", None))
             self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {} ".format(self.framesNumber), None))
             minute = int((self.framesNumber/self.fps) / 60)
             second = int(self.framesNumber/self.fps) % 60
-            self.changedFrames = self.frames
+            self.changedFrames = copy.deepcopy(self.frames)
+            self.previousFrames = copy.deepcopy(self.frames)
             self.update_qImages()
             self.set_video_info(fname[0])
             self.mainFrame = self.frames[2]
@@ -298,6 +311,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             return
 
+
+    def cut_frames(self):
+        self.previousFrames = copy.deepcopy(self.changedFrames)
+        self.previousFramesNumber = self.framesNumber
+        if self.applyFromFrame > self.applyToFrame:
+            (self.applyFromFrame, self.applyToFrame) = ( self.applyToFrame, self.applyFromFrame)
+            self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {}".format(self.applyToFrame+1), None))
+            self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From: {}".format(self.applyFromFrame+1), None))
+        self.changedFrames[self.applyFromFrame:] = self.changedFrames[self.applyToFrame+1:]
+        self.framesNumber = self.framesNumber - (self.applyToFrame - self.applyFromFrame)
+        self.video_current_frame.setText("total frames:"+ str(self.framesNumber))
+        self.horizontalSlider.setMaximum(self.framesNumber)
+        self.horizontalSlider.setValue(self.applyFromFrame)
+        self.applyToFrame = self.applyFromFrame
+        self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {}".format(self.applyToFrame+1), None))
+        self.update_qImages()
+        self.show_frames()
+
+    def revert_changes(self):
+        self.changedFrames = copy.deepcopy(self.previousFrames)
+        self.previousFrames = copy.deepcopy(self.frames)
+        self.framesNumber = self.previousFramesNumber
+        self.video_current_frame.setText("total frames:"+ str(self.framesNumber))
+        self.horizontalSlider.setMaximum(self.framesNumber)
+        self.previousFramesNumber = self.baseFramesNumber
+        self.update_qImages()
+        self.show_frames() 
 
 
     def slider_moved(self, place):
