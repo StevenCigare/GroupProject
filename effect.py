@@ -1,163 +1,248 @@
+from numba import cuda
+from numba.cuda import jit
 import cv2
 import numpy as np
+import math
+block_size = (8, 8, 8)
+import time
+import GPUtil
 
+@cuda.jit
+def edge_detection_kernel_images(input_images, output_edges, threshold1, threshold2):
+    i, row, col = cuda.grid(3)
+    if i < input_images.shape[0] and row < input_images.shape[1] and col < input_images.shape[2]:
+        if i >= 0 and row > 0 and row < input_images.shape[1]-1 and col > 0 and col < input_images.shape[2]-1:
+            gx = input_images[i, row, col, 2] - input_images[i, row, col-1, 2] + 2 * (input_images[i, row, col+1, 2] - input_images[i, row, col-1, 2]) - input_images[i, row, col, 2] + input_images[i, row, col+1, 2]
+            gy = input_images[i, row, col, 2] - input_images[i, row-1, col, 2] + 2 * (input_images[i, row+1, col, 2] - input_images[i, row-1, col, 2]) - input_images[i, row, col, 2] + input_images[i, row+1, col, 2]
+            gradient = math.sqrt(gx ** 2 + gy ** 2)
+
+            if gradient > threshold1 and gradient < threshold2:
+                output_edges[i, row, col, 0] = 255
+                output_edges[i, row, col, 1] = 255
+                output_edges[i, row, col, 2] = 255
+            else:
+                output_edges[i, row, col, 0] = 0
+                output_edges[i, row, col, 1] = 0
+                output_edges[i, row, col, 2] = 0
+
+@cuda.jit
+def blur_kernel_images(input_images, output_images, kernel_size):
+    image_index, row, col = cuda.grid(3)
+    
+    if image_index < input_images.shape[0] and row < input_images.shape[1] and col < input_images.shape[2]:
+        kernel_radius = kernel_size // 2
+        
+        pixel_sum_b = 0.0
+        pixel_sum_g = 0.0
+        pixel_sum_r = 0.0
+        count = 0
+        
+        for i in range(-kernel_radius, kernel_radius + 1):
+            for j in range(-kernel_radius, kernel_radius + 1):
+                blur_row = min(max(row + i, 0), input_images.shape[1] - 1)
+                blur_col = min(max(col + j, 0), input_images.shape[2] - 1) 
+                pixel_sum_b +=   input_images[image_index][blur_row][blur_col][0] 
+                pixel_sum_g += input_images[image_index][blur_row][blur_col][1]
+                pixel_sum_r += input_images[image_index][blur_row][blur_col][2]
+                count +=1
+        output_images[image_index][row][col][0] = pixel_sum_b / count
+        output_images[image_index][row][col][1] = pixel_sum_g / count
+        output_images[image_index][row][col][2] = pixel_sum_r / count
+@cuda.jit
+def sepia_kernel(input_images, output_images):
+    image_index, row, col = cuda.grid(3)
+
+    if image_index < input_images.shape[0] and row < input_images.shape[1] and col < input_images.shape[2]:
+        r = input_images[image_index,row, col, 0]
+        g = input_images[image_index,row, col, 1]
+        b = input_images[image_index,row, col, 2]
+
+        out_r = min(0.393 * r + 0.769 * g + 0.189 * b, 255)
+        out_g = min(0.349 * r + 0.686 * g + 0.168 * b, 255)
+        out_b = min(0.272 * r + 0.534 * g + 0.131 * b, 255)
+
+        output_images[image_index,row, col, 0] = out_r
+        output_images[image_index,row, col, 1] = out_g
+        output_images[image_index,row, col, 2] = out_b
+@cuda.jit
+def bgr_to_grayscale_kernel(input_images, output_images):
+    image_index,row, col = cuda.grid(3)
+
+    if image_index < input_images.shape[0] and row < input_images.shape[1] and col < input_images.shape[2]:
+        r = input_images[image_index,row, col, 0]
+        g = input_images[image_index,row, col, 1]
+        b = input_images[image_index,row, col, 2]
+        gray = 0.2989 * r + 0.587 * g + 0.114 * b
+        output_images[image_index,row, col, 0] = gray
+        output_images[image_index,row, col, 1] = gray
+        output_images[image_index,row, col, 2] = gray
+
+@cuda.jit
+def vignette_kernel(input_images, output_images, center_x, center_y, strength):
+    img_idx, row, col = cuda.grid(3)
+    if img_idx < output_images.shape[0] and row < output_images.shape[1] and col < output_images.shape[2]:
+        y = row / output_images.shape[1] - center_y
+        x = col / output_images.shape[2] - center_x
+        distance = math.sqrt(x**2 + y**2)
+        vignette = 1.0 - (distance * strength)
+        vignette = max(vignette, 0.0)
+        for channel in range(output_images.shape[3]):
+            output_images[img_idx, row, col, channel] = input_images[img_idx, row, col, channel] * vignette
+@cuda.jit
+def change_brightness_kernel(input_images, output_images, alpha, beta):
+    img_idx, row, col = cuda.grid(3)
+    if img_idx < output_images.shape[0] and row < output_images.shape[1] and col < output_images.shape[2]:
+        for channel in range(output_images.shape[3]):
+            output_images[img_idx, row, col, channel] = alpha * input_images[img_idx, row, col, channel] + beta
+            if(output_images[img_idx, row, col, channel] > 255):
+                output_images[img_idx, row, col, channel] = 255
 
 class Effect():
-
-    def gunnar_farneback_optical_flow(self, frames):
-
-        changedFrames = []
-
-        # Convert to gray scale
-        prvs = cv2.cvtColor(frames[0], cv2.COLOR_BGR2GRAY)
-        # Create mask
-        hsv_mask = np.zeros_like(frames[0])
-        # Make image saturation to a maximum value
-        hsv_mask[..., 1] = 255
-        i = 0
-        # Till you scan the video
-        for frame in frames:
-            print(i)
-            i = i + 1
-            # Capture another frame and convert to gray scale
-            next = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        
-            # Optical flow is now calculated
-            flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-            # Compute magnite and angle of 2D vector
-            mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-            # Set image hue value according to the angle of optical flow
-            hsv_mask[..., 0] = ang * 180 / np.pi / 2
-            # Set value as per the normalized magnitude of optical flow
-            hsv_mask[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
-            # Convert to rgb
-            rgb_representation = cv2.cvtColor(hsv_mask, cv2.COLOR_HSV2BGR)
-        
-            #cv2.imshow('frame2', rgb_representation)
-            kk = cv2.waitKey(20) & 0xff
-            # Press 'e' to exit the video
-            if kk == ord('e'):
-                break
-            # Press 's' to save the video
-            elif kk == ord('s'):
-                pass
-                #cv2.imwrite('Optical_image.png', frame2)
-                #cv2.imwrite('HSV_converted_image.png', rgb_representation)
-
-            changedFrames.append(rgb_representation)
-
-            prvs = next
-        
-        return changedFrames
-        #capture.release()
-        #cv2.destroyAllWindows()
-
-    def gunnar_farneback_optical_flow_preview(self, frame, prev_frame):
-        # Convert to gray scale
-        prvs = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
-        # Create mask
-        hsv_mask = np.zeros_like(prev_frame)
-        # Make image saturation to a maximum value
-        hsv_mask[..., 1] = 255
-        
-        # Capture another frame and convert to gray scale
-        next = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
-        # Optical flow is now calculated
-        flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-        # Compute magnite and angle of 2D vector
-        mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-        # Set image hue value according to the angle of optical flow
-        hsv_mask[..., 0] = ang * 180 / np.pi / 2
-        # Set value as per the normalized magnitude of optical flow
-        hsv_mask[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
-        # Convert to rgb
-        rgb_representation = cv2.cvtColor(hsv_mask, cv2.COLOR_HSV2BGR)
-        return rgb_representation
+    def grayscale(self, frames):
+        grid_size = ((frames.shape[0] - 1) // block_size[0] + 1, (frames.shape[1] - 1) // block_size[1] + 1, (frames.shape[2] - 1) // block_size[2] + 1)
+        frames_processed_cnt =0
+        im_size = frames[0].nbytes  /  1000000
+        single_transfer_size = 2.2* im_size
+        while(frames_processed_cnt < frames.shape[0]):
+            gpus = GPUtil.getGPUs()
+            free_memory = gpus[0].memoryFree
+            frames_next_transfer_count = int(free_memory // (single_transfer_size))
+            if(frames_next_transfer_count > frames.shape[0]):
+                frames_next_transfer_count = frames.shape[0]
+            gpu_images = cuda.to_device(frames[frames_processed_cnt:frames_next_transfer_count])
+            gpu_edges = cuda.device_array_like(frames[frames_processed_cnt:frames_next_transfer_count])
+            bgr_to_grayscale_kernel[grid_size, block_size](gpu_images, gpu_edges)
+            frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
+            frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
 
-    def edge_detection_preview(self, frame):
-       img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-       img_blur = cv2.GaussianBlur(img_gray,(3,3), 0)
-
-       sobel_x = cv2.Sobel(src = img_blur, ddepth=cv2.CV_64F,dx=1,dy=0,ksize=17)
-       sobel_y = cv2.Sobel(src = img_blur, ddepth=cv2.CV_64F,dx=0,dy=1,ksize=17)
-       sobel_xy = cv2.Sobel(src = img_blur, ddepth=cv2.CV_64F,dx=1,dy=1,ksize=17)
-       edges = cv2.Canny(image=img_blur, threshold1=5,threshold2=200)
-       edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-       return edges
+    def grayscale_preview(self, frame, grid_size):
+        f =np.asarray([frame])
+        gpu_image = cuda.to_device(f)
+        gpu_edges = cuda.device_array_like(f)
+        print(gpu_edges.shape)
+        bgr_to_grayscale_kernel[grid_size, block_size](gpu_image, gpu_edges)
+        return gpu_edges.copy_to_host()
+    def edge_detection_preview(self, frame,grid_size):
+        f =np.asarray([frame])
+        gpu_image = cuda.to_device(f)
+        gpu_edges = cuda.device_array_like(f)
+        print(gpu_edges.shape)
+        edge_detection_kernel_images[grid_size, block_size](gpu_image, gpu_edges,100,200)
+        return gpu_edges.copy_to_host()
 
     def edge_detection(self, frames):
-        changed_frames = []
-        for frame in frames:
-            changed_frames.append(self.edge_detection_preview(frame))
-        return changed_frames
-
+        grid_size = ((frames.shape[0] - 1) // block_size[0] + 1, (frames.shape[1] - 1) // block_size[1] + 1, (frames.shape[2] - 1) // block_size[2] + 1)
+        frames_processed_cnt =0
+        im_size = frames[0].nbytes  /  1000000
+        single_transfer_size = 2.2* im_size
+        while(frames_processed_cnt < frames.shape[0]):
+            gpus = GPUtil.getGPUs()
+            free_memory = gpus[0].memoryFree
+            frames_next_transfer_count = int(free_memory // (single_transfer_size))
+            if(frames_next_transfer_count > frames.shape[0]):
+                frames_next_transfer_count = frames.shape[0]
+            gpu_images = cuda.to_device(frames[frames_processed_cnt:frames_next_transfer_count])
+            gpu_edges = cuda.device_array_like(frames[frames_processed_cnt:frames_next_transfer_count])
+            edge_detection_kernel_images[grid_size, block_size](gpu_images, gpu_edges,100,200)
+            frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
+            frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
     def gaussian_blur(self, frames):
-        changedFrames = []
-        for frame in frames:
-            changedFrames.append(cv2.GaussianBlur(frame, (15,15), 0))
+        grid_size = ((frames.shape[0] - 1) // block_size[0] + 1, (frames.shape[1] - 1) // block_size[1] + 1, (frames.shape[2] - 1) // block_size[2] + 1)
+        frames_processed_cnt =0
+        im_size = frames[0].nbytes  /  1000000
+        single_transfer_size = 2.2* im_size
+        while(frames_processed_cnt < frames.shape[0]):
+            gpus = GPUtil.getGPUs()
+            free_memory = gpus[0].memoryFree
+            frames_next_transfer_count = int(free_memory // (single_transfer_size))
+            if(frames_next_transfer_count > frames.shape[0]):
+                frames_next_transfer_count = frames.shape[0]
+            gpu_images = cuda.to_device(frames[frames_processed_cnt:frames_next_transfer_count])
+            gpu_edges = cuda.device_array_like(frames[frames_processed_cnt:frames_next_transfer_count])
+            blur_kernel_images[grid_size, block_size](gpu_images, gpu_edges,5)
+            frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
+            frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
 
-        return changedFrames
 
-    def gaussian_blur_preview(self, frame):
-        return cv2.GaussianBlur(frame, (15,15), 0)
-
-    def sepia_preview(self, frame):
-        img = np.array(frame, dtype=np.float64)  # converting to float to prevent loss
-        img = cv2.transform(img, np.matrix([[0.272, 0.534, 0.131],
-                                            [0.349, 0.686, 0.168],
-                                            [0.393, 0.769, 0.189]]))  # multipying image with special sepia matrix
-        img[np.where(img > 255)] = 255  # normalizing values greater than 255 to 255
-        img = np.array(img, dtype=np.uint8)
-        return img
+    def gaussian_blur_preview(self, frame,grid_size):
+        f =np.asarray([frame])
+        gpu_image = cuda.to_device(f)
+        gpu_edges = cuda.device_array_like(f)
+        print(gpu_edges.shape)
+        blur_kernel_images[grid_size, block_size](gpu_image, gpu_edges,5)
+        return gpu_edges.copy_to_host()
+    
+    def sepia_preview(self, frame,grid_size):
+        f =np.asarray([frame])
+        gpu_image = cuda.to_device(f)
+        gpu_edges = cuda.device_array_like(f)
+        print(gpu_edges.shape)
+        sepia_kernel[grid_size, block_size](gpu_image, gpu_edges)
+        return gpu_edges.copy_to_host()
 
     def sepia(self, frames):
-        changedFrames = []
-        for frame in frames:
-            img = np.array(frame, dtype=np.float64)  # converting to float to prevent loss
-            img = cv2.transform(img, np.matrix([[0.272, 0.534, 0.131],
-                                                [0.349, 0.686, 0.168],
-                                                [0.393, 0.769, 0.189]]))  # multipying image with special sepia matrix
-            img[np.where(img > 255)] = 255  # normalizing values greater than 255 to 255
-            img = np.array(img, dtype=np.uint8)
-            changedFrames.append(img)
-        return changedFrames
+        grid_size = ((frames.shape[0] - 1) // block_size[0] + 1, (frames.shape[1] - 1) // block_size[1] + 1, (frames.shape[2] - 1) // block_size[2] + 1)
+        frames_processed_cnt =0
+        im_size = frames[0].nbytes  /  1000000
+        single_transfer_size = 2.2* im_size
+        while(frames_processed_cnt < frames.shape[0]):
+            gpus = GPUtil.getGPUs()
+            free_memory = gpus[0].memoryFree
+            frames_next_transfer_count = int(free_memory // (single_transfer_size))
+            if(frames_next_transfer_count > frames.shape[0]):
+                frames_next_transfer_count = frames.shape[0]
+            gpu_images = cuda.to_device(frames[frames_processed_cnt:frames_next_transfer_count])
+            gpu_edges = cuda.device_array_like(frames[frames_processed_cnt:frames_next_transfer_count])
+            sepia_kernel[grid_size, block_size](gpu_images, gpu_edges)
+            frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
+            frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
 
-    def pencil_sketch_preview(self, frames):
-        img = frames
-        dst_gray, dst_color = cv2.pencilSketch(img, sigma_s=60, sigma_r=0.07,
-                                               shade_factor=0.05)
-        return dst_color
+    def vignette_preview(self, frame,grid_size):
+        f =np.asarray([frame])
+        gpu_image = cuda.to_device(f)
+        gpu_edges = cuda.device_array_like(f)
+        print(gpu_edges.shape)
+        vignette_kernel[grid_size, block_size](gpu_image, gpu_edges,0.5,0.5, 1.5)
+        return gpu_edges.copy_to_host()
 
-    def pencil_sketch(self, frames):
-        changed_frames = []
-        i=0
-        for frame in frames:
-            dst_gray, dst_color = cv2.pencilSketch(frame, sigma_s=60, sigma_r=0.07,
-                                                   shade_factor=0.05)
-            changed_frames.append(self.edge_detection_preview(dst_color))
-        return changed_frames
-    def cartooning_preview(self, frame):
-        img = frame
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        gray = cv2.medianBlur(gray, 5)  # applying median blur with kernel size of 5
-        edges2 = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 7, 7)  # thick edges
-        dst = cv2.edgePreservingFilter(img, flags=2, sigma_s=64,
-                                       sigma_r=0.25)  # you can also use bilateral filter but that is slow
-        cartoon2 = cv2.bitwise_and(dst, dst, mask=edges2)  # adding thick edges to smoothened image
+    def vignette(self, frames):
+        grid_size = ((frames.shape[0] - 1) // block_size[0] + 1, (frames.shape[1] - 1) // block_size[1] + 1, (frames.shape[2] - 1) // block_size[2] + 1)
+        frames_processed_cnt = 0
+        im_size = frames[0].nbytes  /  1000000
+        single_transfer_size = 2.2* im_size
+        while(frames_processed_cnt < frames.shape[0]):
+            gpus = GPUtil.getGPUs()
+            free_memory = gpus[0].memoryFree
+            frames_next_transfer_count = int(free_memory // (single_transfer_size))
+            if(frames_next_transfer_count > frames.shape[0]):
+                frames_next_transfer_count = frames.shape[0]
+            gpu_images = cuda.to_device(frames[frames_processed_cnt:frames_next_transfer_count])
+            gpu_edges = cuda.device_array_like(frames[frames_processed_cnt:frames_next_transfer_count])
+            vignette_kernel[grid_size, block_size](gpu_images, gpu_edges,0.5,0.5,1.5)
+            frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
+            frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
 
-        return cartoon2
-
-    def cartonning(self, frames):
-        changed_frames = []
-        i = 0
-        for img in frames:
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            gray = cv2.medianBlur(gray, 5)  # applying median blur with kernel size of 5
-            edges2 = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 7,
-                                           7)  # thick edges
-            dst = cv2.edgePreservingFilter(img, flags=2, sigma_s=64,
-                                           sigma_r=0.25)  # you can also use bilateral filter but that is slow
-            cartoon2 = cv2.bitwise_and(dst, dst, mask=edges2)  # adding thick edges to smoothened image
-            changed_frames.append(cartoon2)
-        return changed_frames
+    def brightness(self, frames):
+        grid_size = ((frames.shape[0] - 1) // block_size[0] + 1, (frames.shape[1] - 1) // block_size[1] + 1, (frames.shape[2] - 1) // block_size[2] + 1)
+        frames_processed_cnt = 0
+        im_size = frames[0].nbytes  /  1000000
+        single_transfer_size = 2.2* im_size
+        while(frames_processed_cnt < frames.shape[0]):
+            gpus = GPUtil.getGPUs()
+            free_memory = gpus[0].memoryFree
+            frames_next_transfer_count = int(free_memory // (single_transfer_size))
+            if(frames_next_transfer_count > frames.shape[0]):
+                frames_next_transfer_count = frames.shape[0]
+            gpu_images = cuda.to_device(frames[frames_processed_cnt:frames_next_transfer_count])
+            gpu_edges = cuda.device_array_like(frames[frames_processed_cnt:frames_next_transfer_count])
+            change_brightness_kernel[grid_size, block_size](gpu_images, gpu_edges,1.0,-30)
+            frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
+            frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
+    def brightness_preview(self, frame,grid_size):
+        f =np.asarray([frame])
+        gpu_image = cuda.to_device(f)
+        gpu_edges = cuda.device_array_like(f)
+        print(gpu_edges.shape)
+        change_brightness_kernel[grid_size, block_size](gpu_image, gpu_edges,1.0,-30)
+        return gpu_edges.copy_to_host()

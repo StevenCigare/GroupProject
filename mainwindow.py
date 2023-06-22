@@ -36,9 +36,9 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QLabel,
     QSizePolicy, QSlider, QStatusBar, QToolButton,
 
     QVBoxLayout, QWidget)
-NO_THREADS = 3
+NO_THREADS = 1
 FPS_SAVE = 25
-
+block_size = (8, 8, 8)
 def multi_thread(frames, func):
     sliced_list = np.array_split(frames, NO_THREADS)    # split the array to equal number of chunks
     threads = []
@@ -55,7 +55,7 @@ def multi_thread(frames, func):
         results[idx] = thread.join()    # save changed frames from every thread
     
     
-    return sum(results, [])            # combine all changed frames and return 
+    return          # combine all changed frames and return 
 
 
 
@@ -90,12 +90,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for check_box in self.check_boxes:
             check_box.stateChanged.connect(self.check_if_boxes_checked)
 
-        self.check_boxes[0].setText("Gunnar Farneback optical flow")
+        self.check_boxes[0].setText("grayscale")
         self.check_boxes[1].setText("Gaussian Blur")
         self.check_boxes[2].setText("Edge detection")
         self.check_boxes[3].setText("sepia")
-        self.check_boxes[4].setText("pencil sketch")
-        self.check_boxes[5].setText("cartooning")
+        self.check_boxes[4].setText("vignette")
+        self.check_boxes[5].setText("brightness")
         self.pushButtonVideo.clicked.connect(self.apply_effects_to_video)
         self.pushButtonFrame.clicked.connect(self.apply_effects_to_frame)
         self.pushButtonFrom.clicked.connect(self.select_from_frame)
@@ -146,7 +146,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4)")
         height, width = self.changedFrames[0].shape[0],self.changedFrames[0].shape[1]
         frame_size = (int(width), int(height))
-        output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), FPS_SAVE, frame_size)
+        if(self.changedFrames[0].ndim == 2): 
+            output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc(*'mp4v'), FPS_SAVE, frame_size,isColor=False)
+        else:
+            output = cv2.VideoWriter(fname[0], cv2.VideoWriter_fourcc(*'mp4v'), FPS_SAVE, frame_size)
     
         for frame in self.changedFrames:
             output.write(frame)
@@ -177,62 +180,50 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.changedFrames = self.frames
         if self.check_boxes[0].isChecked():
-            self.changedFrames = multi_thread(self.changedFrames, self.effects.gunnar_farneback_optical_flow)
+            self.effects.grayscale(self.changedFrames)
         if self.check_boxes[1].isChecked():
-            self.changedFrames = multi_thread(self.changedFrames, self.effects.gaussian_blur)
+            self.effects.gaussian_blur(self.changedFrames)
         if self.check_boxes[2].isChecked():
-            self.changedFrames = multi_thread(self.changedFrames, self.effects.edge_detection)
+            self.effects.edge_detection(self.changedFrames)
         if self.check_boxes[3].isChecked():
-            self.changedFrames = multi_thread(self.changedFrames, self.effects.sepia)
+            self.effects.sepia(self.changedFrames)
         if self.check_boxes[4].isChecked():
-            self.changedFrames = multi_thread(self.changedFrames, self.effects.pencil_sketch)
+            self.effects.vignette(self.changedFrames)
         if self.check_boxes[5].isChecked():
-            self.changedFrames = multi_thread(self.changedFrames, self.effects.cartonning)
+            self.effects.brightness(self.changedFrames)
         
     def apply_effects_to_frame(self):
         self.changedFrames = self.frames
         self.changedFrames[self.firstFrame-1] = self.changedFrame
-       # if self.check_boxes[0].isChecked():
-        #    self.changedFrames[self.firstFrame-1]  = self.effects.gunnar_farneback_optical_flow_preview(self.changedFrame, self.frames[self.firstFrame + 1])
-        #if self.check_boxes[1].isChecked():
-        #    self.changedFrames[self.firstFrame-1]  = self.effects.gaussian_blur_preview(self.changedFrame)
-        #if self.check_boxes[2].isChecked():
-        #    self.changedFrames[self.firstFrame-1]  = self.effects.edge_detection_preview(self.changedFrames)
-        #if self.check_boxes[3].isChecked():
-        #    self.changedFrames[self.firstFrame-1]  = self.effects.sepia_preview(self.changedFrames)
-        #if self.check_boxes[4].isChecked():
-        #    self.changedFrames[self.firstFrame-1]  = self.effects.pencil_sketch_preview(self.changedFrames)
-        #if self.check_boxes[5].isChecked():
-        #    self.changedFrames[self.firstFrame-1]  = self.effects.cartooning_preview(self.changedFrames)
-
 
     def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
         self.changedFrame  = self.mainFrame
+        grid_size = ((self.frames.shape[0] - 1) // block_size[0] + 1, (self.frames.shape[1] - 1) // block_size[1] + 1, (self.frames.shape[2] - 1) // block_size[2] + 1)
         if self.check_boxes[0].isChecked():
-            self.changedFrame = self.effects.gunnar_farneback_optical_flow_preview(self.changedFrame, self.frames[self.firstFrame + 1])
+            self.changedFrame = self.effects.grayscale_preview(self.changedFrame, grid_size)[0]
             self.change_affected_frame(self.changedFrame)
         if self.check_boxes[1].isChecked():
-            self.changedFrame = self.effects.gaussian_blur_preview(self.changedFrame)
+            self.changedFrame = self.effects.gaussian_blur_preview(self.changedFrame,grid_size)[0]
             self.change_affected_frame(self.changedFrame)
         if self.check_boxes[2].isChecked():
-            self.changedFrame = self.effects.edge_detection_preview(self.changedFrame)
+            self.changedFrame = self.effects.edge_detection_preview(self.changedFrame,grid_size)[0]
             self.change_affected_frame(self.changedFrame)
         if self.check_boxes[3].isChecked():
-            self.changedFrame = self.effects.sepia_preview(self.changedFrame)
+            self.changedFrame = self.effects.sepia_preview(self.changedFrame,grid_size)[0]
             self.change_affected_frame(self.changedFrame)
         if self.check_boxes[4].isChecked():
-            self.changedFrame = self.effects.pencil_sketch_preview(self.changedFrame)
+            self.changedFrame = self.effects.vignette_preview(self.changedFrame,grid_size)[0]
             self.change_affected_frame(self.changedFrame)
         if self.check_boxes[5].isChecked():
-            self.changedFrame = self.effects.cartooning_preview(self.changedFrame)
+            self.changedFrame = self.effects.brightness_preview(self.changedFrame,grid_size)[0]
             self.change_affected_frame(self.changedFrame)
 
     def change_affected_frame(self, frame):
         self.photoWithEffects.setPixmap(QPixmap(self.convert_to_qimage(frame)))
-
     def change_main_frame(self, number):
         self.currentMainNumber = self.firstFrame + number -1
         self.mainFrame = self.frames[self.currentMainNumber]
+
         self.photoWoEffects.setPixmap(QPixmap(self.convert_to_qimage(self.mainFrame)))
         self.check_if_boxes_checked()
         if number != 3:
@@ -246,9 +237,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def set_video_info(self,fname):
         image_data = ffmpeg.probe(fname)["streams"]  
-       # print(image_data)
-        #print(type(image_data))
-       # print(type(image_data[0]))
         self.infoWidget.setTitle(QCoreApplication.translate("MainWindow", "Details: "+os.path.basename(fname),None))
         self.vid_time_total.setText("video length: " + str(int(float(image_data[0]['duration'])))+str(" s"))
         self.video_current_frame.setText("total frames:"+ str(self.framesNumber))

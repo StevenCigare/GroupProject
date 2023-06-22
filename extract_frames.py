@@ -64,7 +64,6 @@ def send_data(p, no_frames):
         #p.write(f'{idx}')
         #p.closeWriteChannel()
         #sys.stdout.write(f'{idx}\n')
-        time.sleep(0.01)
         #data = sys.stdout.readline()
         #info = QIODevice.read(p)
         #print(info)
@@ -101,4 +100,4 @@ def extract(video_path):
     thread.join()
     idx -= 1
     
-    return frames, save_path, idx, fps
+    return np.asarray(frames), save_path, idx, fps
