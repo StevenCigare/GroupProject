@@ -217,25 +217,43 @@ class Ui_MainWindow(object):
 
         self.pushButtonVideo.setObjectName(u"pushButtonVideo")
         self.pushButtonVideo.setStyleSheet("background-color: #443C68")
-        self.pushButtonVideo.setGeometry(QRect(40, 200, 131, 31))
+        self.pushButtonVideo.setGeometry(QRect(40, 180, 131, 25))
 
         self.pushButtonFrame = QPushButton(self.groupBox)
 
         self.pushButtonFrame.setObjectName(u"pushButtonFrame")
         self.pushButtonFrame.setStyleSheet("background-color: #443C68")
-        self.pushButtonFrame.setGeometry(QRect(40, 240, 131, 31))
+        self.pushButtonFrame.setGeometry(QRect(40, 210, 131, 25))
 
         self.pushButtonFrom = QPushButton(self.groupBox)
 
         self.pushButtonFrom.setObjectName(u"pushButtonFrom")
         self.pushButtonFrom.setStyleSheet("background-color: #443C68")
-        self.pushButtonFrom.setGeometry(QRect(40, 280, 60, 31))
+        self.pushButtonFrom.setGeometry(QRect(20, 240, 80, 25))
 
         self.pushButtonTo = QPushButton(self.groupBox)
 
         self.pushButtonTo.setObjectName(u"pushButtonTo")
         self.pushButtonTo.setStyleSheet("background-color: #443C68")
-        self.pushButtonTo.setGeometry(QRect(110, 280, 60, 31))
+        self.pushButtonTo.setGeometry(QRect(110, 240, 80, 25))
+
+        self.pushButtonFrames = QPushButton(self.groupBox)
+
+        self.pushButtonFrames.setObjectName(u"pushButtonFrames")
+        self.pushButtonFrames.setStyleSheet("background-color: #443C68")
+        self.pushButtonFrames.setGeometry(QRect(20, 270, 80, 25))
+
+        self.pushButtonCut = QPushButton(self.groupBox)
+
+        self.pushButtonCut.setObjectName(u"pushButtonFrames")
+        self.pushButtonCut.setStyleSheet("background-color: #443C68")
+        self.pushButtonCut.setGeometry(QRect(110, 270, 80, 25))
+
+        self.pushButtonRevert = QPushButton(self.groupBox)
+
+        self.pushButtonRevert.setObjectName(u"pushButtonFrames")
+        self.pushButtonRevert.setStyleSheet("background-color: #443C68")
+        self.pushButtonRevert.setGeometry(QRect(40, 300, 131, 25))
 
         self.widget1 = QWidget(self.groupBox)
 
@@ -424,9 +442,15 @@ class Ui_MainWindow(object):
 
         self.pushButtonFrame.setText(QCoreApplication.translate("MainWindow", u"Apply to frame", None))
 
-        self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From", None))
+        self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From: ", None))
 
-        self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To", None))
+        self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: ", None))
+
+        self.pushButtonFrames.setText(QCoreApplication.translate("MainWindow", u"Apply", None))
+
+        self.pushButtonCut.setText(QCoreApplication.translate("MainWindow", u"Cut", None))
+
+        self.pushButtonRevert.setText(QCoreApplication.translate("MainWindow", u"Revert", None))
 
         self.checkBox.setText(QCoreApplication.translate("MainWindow", u"CheckBox", None))
 
