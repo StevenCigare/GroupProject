@@ -4,7 +4,7 @@ from PySide6.QtGui import QPixmap, QImage
 from ui_MainWindow import Ui_MainWindow
 from extract_frames import extract
 from effect import Effect
-from custom_thread import CustomThread
+from threading import Thread
 import cv2
 import copy
 
@@ -20,8 +20,6 @@ from PySide6.QtWidgets import (QMainWindow)
 NO_THREADS = 1
 FPS_SAVE = 25
 block_size = (8, 8, 8)
-
-
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -83,36 +81,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label4.clicked.connect(lambda: self.change_main_frame(4))
         self.label5.clicked.connect(lambda: self.change_main_frame(5))
 
-        
-        # menubar and menus
-        """
-        menu_bar = self.menuBar()
-        file_menu = menu_bar.addMenu("&File")
-        quit_action = file_menu.addAction("Quit")
-        quit_action.triggered.connect(self.quit_app)
-
-        edit_menu = menu_bar.addMenu("&Edit")
-        edit_menu.addAction("Copy")
-        edit_menu.addAction("Cut")
-        edit_menu.addAction("Paste")
-        edit_menu.addAction("Undo")
-        edit_menu.addAction("Redo")
-
-        edit_menu = menu_bar.addMenu("Window")
-        edit_menu = menu_bar.addMenu("Settings")
-        edit_menu = menu_bar.addMenu("Help")
-
-        button1 = QPushButton("BUTTON1")
-        button1.clicked.connect(self.button1_clicked)
     
+    def create_deep_copy_changed(self, l):
+        self.changedFrames = copy.deepcopy(l)
 
-        #toolbar
-        toolbar = QToolBar("My main toolbar")
-        toolbar.setIconSize(QSize(16,16))
-        self.addToolBar(toolbar)
+    def create_deep_copy_previous(self, l):
+        self.previousFrames = copy.deepcopy(l)
 
-        toolbar.addWidget(button1)
-        """
     def save_video_as(self):
         fname = QFileDialog.getSaveFileName(self, "Save file", "","MP4 Files (*.mp4);;AVI Files (*.avi);;MOV Files (*.mov)")
         height, width = self.changedFrames[0].shape[0],self.changedFrames[0].shape[1]
@@ -160,7 +135,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show_frames()
 
     def apply_effects_to_video(self):
-        self.previousFrames = copy.deepcopy(self.changedFrames)
+        t1 = Thread(target=self.create_deep_copy_previous, args=(self.changedFrames,))
+        t1.start()
+        #self.previousFrames = copy.deepcopy(self.changedFrames)
         if self.check_boxes[0].isChecked():
             self.effects.grayscale(self.changedFrames)
         if self.check_boxes[1].isChecked():
@@ -242,15 +219,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         fname = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;MP4 Files (*.mp4);;MOV Files (*.mov);;AVI Files (*.avi)")
         if fname:
-            self.frames, self.framesDir, self.framesNumber,self.fps = extract(fname[0])
+            #self.frames = np.empty()
+            self.frames = []
+            self.framesDir, self.framesNumber,self.fps = extract(fname[0], self.frames)
+            self.frames = np.asarray(self.frames)
+            print(self.frames.shape)
             self.baseFramesNumber = self.framesNumber
             self.previousFramesNumber = self.framesNumber
             self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From: 1", None))
             self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {} ".format(self.framesNumber), None))
             minute = int((self.framesNumber/self.fps) / 60)
             second = int(self.framesNumber/self.fps) % 60
-            self.changedFrames = copy.deepcopy(self.frames)
-            self.previousFrames = copy.deepcopy(self.frames)
+            print(len(self.frames))
+            t1 = Thread(target=self.create_deep_copy_changed, args=(self.frames,))
+            t2 = Thread(target=self.create_deep_copy_previous, args=(self.frames,))
+            t1.start()
+            t2.start()
+            #self.changedFrames = copy.deepcopy(self.frames)
+            #self.previousFrames = copy.deepcopy(self.frames)
+            t1.join()
             self.update_qImages()
             self.set_video_info(fname[0])
             self.mainFrame = self.frames[2]
@@ -258,20 +245,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.horizontalSlider.setMaximum(self.framesNumber)
             self.horizontalSlider.setValue(0)
             self.photoWoEffects.setPixmap(QPixmap(self.convert_to_qimage(self.mainFrame)))
-            self.show_frames()
+            self.show_frames() 
+            #t2.join()
 
         else:
             return
 
 
     def cut_frames(self):
-        self.previousFrames = copy.deepcopy(self.changedFrames)
+        t1 = Thread(target=self.create_deep_copy_previous, args=(self.changedFrames,))
+        t1.start()
+        #self.previousFrames = copy.deepcopy(self.changedFrames)
         self.previousFramesNumber = self.framesNumber
         if self.applyFromFrame > self.applyToFrame:
             (self.applyFromFrame, self.applyToFrame) = ( self.applyToFrame, self.applyFromFrame)
             self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {}".format(self.applyToFrame+1), None))
             self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From: {}".format(self.applyFromFrame+1), None))
+        self.changedFrames = list(self.changedFrames)
         self.changedFrames[self.applyFromFrame:] = self.changedFrames[self.applyToFrame+1:]
+        self.changedFrames = np.asarray(self.changedFrames)
         self.framesNumber = self.framesNumber - (self.applyToFrame - self.applyFromFrame)
         self.video_current_frame.setText("total frames:"+ str(self.framesNumber))
         self.horizontalSlider.setMaximum(self.framesNumber)
@@ -282,14 +274,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show_frames()
 
     def revert_changes(self):
-        self.changedFrames = copy.deepcopy(self.previousFrames)
-        self.previousFrames = copy.deepcopy(self.frames)
+        t1 = Thread(target=self.create_deep_copy_changed, args=(self.previousFrames,))
+        t2 = Thread(target=self.create_deep_copy_previous, args=(self.frames,))
+        t1.start()
+        t2.start()
+        #self.changedFrames = copy.deepcopy(self.previousFrames)
+        #self.previousFrames = copy.deepcopy(self.frames)
         self.framesNumber = self.previousFramesNumber
         self.video_current_frame.setText("total frames:"+ str(self.framesNumber))
         self.horizontalSlider.setMaximum(self.framesNumber)
         self.previousFramesNumber = self.baseFramesNumber
+        t1.join()
         self.update_qImages()
         self.show_frames() 
+        #t2.join()
 
 
     def slider_moved(self, place):

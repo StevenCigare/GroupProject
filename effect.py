@@ -6,6 +6,8 @@ import math
 block_size = (8, 8, 8)
 import time
 import GPUtil
+from shared_mem import MemoryManager
+from LoadingWindow import create_loading_window
 
 @cuda.jit
 def edge_detection_kernel_images(input_images, output_edges, threshold1, threshold2):
@@ -104,6 +106,11 @@ class Effect():
         frames_processed_cnt =0
         im_size = frames[0].nbytes  /  1000000
         single_transfer_size = 2.2* im_size
+
+        #loading window
+        p = create_loading_window(frames.shape[0])
+        manager = MemoryManager(name='mymemory', to_create=True)
+
         while(frames_processed_cnt < frames.shape[0]):
             gpus = GPUtil.getGPUs()
             free_memory = gpus[0].memoryFree
@@ -115,6 +122,11 @@ class Effect():
             bgr_to_grayscale_kernel[grid_size, block_size](gpu_images, gpu_edges)
             frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
             frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
+            print(frames_processed_cnt)
+            manager.put(frames_processed_cnt)
+        
+        manager.block.close()
+        manager.block.unlink()
 
     def grayscale_preview(self, frame, grid_size):
         f =np.asarray([frame])
@@ -132,10 +144,14 @@ class Effect():
         return gpu_edges.copy_to_host()
 
     def edge_detection(self, frames):
+        p = create_loading_window(frames.shape[0])
+        manager = MemoryManager(name='mymemory', to_create=True)
+        
         grid_size = ((frames.shape[0] - 1) // block_size[0] + 1, (frames.shape[1] - 1) // block_size[1] + 1, (frames.shape[2] - 1) // block_size[2] + 1)
         frames_processed_cnt =0
         im_size = frames[0].nbytes  /  1000000
         single_transfer_size = 2.2* im_size
+
         while(frames_processed_cnt < frames.shape[0]):
             gpus = GPUtil.getGPUs()
             free_memory = gpus[0].memoryFree
@@ -147,11 +163,19 @@ class Effect():
             edge_detection_kernel_images[grid_size, block_size](gpu_images, gpu_edges,100,200)
             frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
             frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
+        
+        manager.block.close()
+        manager.block.unlink()
+
     def gaussian_blur(self, frames):
         grid_size = ((frames.shape[0] - 1) // block_size[0] + 1, (frames.shape[1] - 1) // block_size[1] + 1, (frames.shape[2] - 1) // block_size[2] + 1)
         frames_processed_cnt =0
         im_size = frames[0].nbytes  /  1000000
         single_transfer_size = 2.2* im_size
+
+        p = create_loading_window(frames.shape[0])
+        manager = MemoryManager(name='mymemory', to_create=True)
+
         while(frames_processed_cnt < frames.shape[0]):
             gpus = GPUtil.getGPUs()
             free_memory = gpus[0].memoryFree
@@ -163,7 +187,10 @@ class Effect():
             blur_kernel_images[grid_size, block_size](gpu_images, gpu_edges,5)
             frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
             frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
+            manager.put(frames_processed_cnt)
 
+        manager.block.close()
+        manager.block.unlink()
 
     def gaussian_blur_preview(self, frame,grid_size):
         f =np.asarray([frame])
@@ -186,6 +213,10 @@ class Effect():
         frames_processed_cnt =0
         im_size = frames[0].nbytes  /  1000000
         single_transfer_size = 2.2* im_size
+
+        p = create_loading_window(frames.shape[0])
+        manager = MemoryManager(name='mymemory', to_create=True)
+
         while(frames_processed_cnt < frames.shape[0]):
             gpus = GPUtil.getGPUs()
             free_memory = gpus[0].memoryFree
@@ -197,6 +228,10 @@ class Effect():
             sepia_kernel[grid_size, block_size](gpu_images, gpu_edges)
             frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
             frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
+            manager.put(frames_processed_cnt)
+
+        manager.block.close()
+        manager.block.unlink()
 
     def vignette_preview(self, frame,grid_size):
         f =np.asarray([frame])
@@ -211,6 +246,10 @@ class Effect():
         frames_processed_cnt = 0
         im_size = frames[0].nbytes  /  1000000
         single_transfer_size = 2.2* im_size
+
+        p = create_loading_window(frames.shape[0])
+        manager = MemoryManager(name='mymemory', to_create=True)
+
         while(frames_processed_cnt < frames.shape[0]):
             gpus = GPUtil.getGPUs()
             free_memory = gpus[0].memoryFree
@@ -222,12 +261,20 @@ class Effect():
             vignette_kernel[grid_size, block_size](gpu_images, gpu_edges,0.5,0.5,1.5)
             frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
             frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
+            manager.put(frames_processed_cnt)
+
+        manager.block.close()
+        manager.block.unlink()
 
     def brightness(self, frames):
         grid_size = ((frames.shape[0] - 1) // block_size[0] + 1, (frames.shape[1] - 1) // block_size[1] + 1, (frames.shape[2] - 1) // block_size[2] + 1)
         frames_processed_cnt = 0
         im_size = frames[0].nbytes  /  1000000
         single_transfer_size = 2.2* im_size
+
+        p = create_loading_window(frames.shape[0])
+        manager = MemoryManager(name='mymemory', to_create=True)
+
         while(frames_processed_cnt < frames.shape[0]):
             gpus = GPUtil.getGPUs()
             free_memory = gpus[0].memoryFree
@@ -239,6 +286,10 @@ class Effect():
             change_brightness_kernel[grid_size, block_size](gpu_images, gpu_edges,1.0,-30)
             frames[frames_processed_cnt:frames_next_transfer_count] =  gpu_edges.copy_to_host()
             frames_processed_cnt = frames_processed_cnt + frames_next_transfer_count
+        
+        manager.block.close()
+        manager.block.unlink()
+
     def brightness_preview(self, frame,grid_size):
         f =np.asarray([frame])
         gpu_image = cuda.to_device(f)

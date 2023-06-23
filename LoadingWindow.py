@@ -10,23 +10,16 @@ from PySide6.QtWidgets import (QApplication, QLabel, QProgressBar, QSizePolicy,
 import sys
 import time
 from threading import Thread
+from multiprocessing import shared_memory
+from PySide6.QtCore import (QProcess)
+from shared_mem import MemoryManager
+import array
 
-counter = 12
+def create_loading_window(no_frames):
+    p = QProcess()
+    p.start("python", ['LoadingWindow.py', f'{int(no_frames)}'])
 
-def update_counter():
-    global counter
-
-    info = 0
-    while not QByteArray.isEmpty(info):
-        print(counter)
-        data = sys.stdout.readline()
-        sys.stdout.flush()
-        
-        #info = QIODevice.read()
-        counter = int(data)
-        #sys.stdout.write(f'wszystko git tutaj!\n')
-        #QIODevice.write(QByteArray('jes git'))
-    
+    return p
 
 class Ui_LoadingWindow(QWidget):
     def __init__(self, app):
@@ -67,24 +60,25 @@ class Ui_LoadingWindow(QWidget):
     # retranslateUi
 
     def load_frames(self):     
-        global counter
         i = 0
-        
+        current_frame = 0
+        prev = 0
         no_frames = int(sys.argv[1])
-        #print(no_frames)
-        #t1 = Thread(target=update_counter, args=())
-        #print(no_frames)
-        while i != no_frames:
+        manager = MemoryManager(name='mymemory')
+        while i < 100:
+            time.sleep(0.2)
             self.progressBar.setValue(i)
-            #print(i)
-            time.sleep(0.05)
-            #self.repaint()
-            #print(counter)
-            #print(idx)
-            i+=1
+            try:
+                current_frame = manager.get()
+                if current_frame == prev:
+                    raise Exception
 
-        #t1.join()
-        print(counter)
+                prev = current_frame
+                i=int(100*current_frame/no_frames)
+            except:
+                i+=5
+        
+        manager.block.close()
 
 
 if __name__ == "__main__":
