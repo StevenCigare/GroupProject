@@ -1,3 +1,5 @@
+from numba import cuda
+from numba.cuda import jit
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow
 from mainwindow import MainWindow
 import sys
