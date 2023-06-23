@@ -20,23 +20,6 @@ from PySide6.QtWidgets import (QMainWindow)
 NO_THREADS = 1
 FPS_SAVE = 25
 block_size = (8, 8, 8)
-def multi_thread(frames, func):
-    sliced_list = np.array_split(frames, NO_THREADS)    # split the array to equal number of chunks
-    threads = []
-    results = [[] for _ in range(NO_THREADS)]   # array for results
-    print("length")
-    print(len(sliced_list))
-    
-    for portion in sliced_list:
-        print(len(portion))
-        threads.append(CustomThread(target=func, args=(portion,)))   #start threads
-        threads[-1].start()
-    
-    for idx, thread in enumerate(threads):
-        results[idx] = thread.join()    # save changed frames from every thread
-    
-    
-    return          # combine all changed frames and return 
 
 
 
