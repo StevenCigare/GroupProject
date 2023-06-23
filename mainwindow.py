@@ -9,34 +9,14 @@ import cv2
 import copy
 
 import numpy as np
-import time
 from LoadingWindow import Ui_LoadingWindow
-import threading
 import os
 import ffmpeg
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+from PySide6.QtCore import (QCoreApplication)
 
-    QMetaObject, QObject, QPoint, QRect,
+from PySide6.QtGui import (QPixmap)
 
-    QSize, QTime, QUrl, Qt)
-
-from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
-
-    QCursor, QFont, QFontDatabase, QGradient,
-
-    QIcon, QImage, QKeySequence, QLinearGradient,
-
-    QPainter, QPalette, QPixmap, QRadialGradient,
-
-    QTransform)
-
-from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QLabel,
-
-    QMainWindow, QMenu, QMenuBar, QPushButton,
-
-    QSizePolicy, QSlider, QStatusBar, QToolButton,
-
-    QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QMainWindow)
 NO_THREADS = 1
 FPS_SAVE = 25
 block_size = (8, 8, 8)
@@ -182,17 +162,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.pushButtonTo.setText(QCoreApplication.translate("MainWindow", u"To: {}".format(self.applyToFrame+1), None))
             self.pushButtonFrom.setText(QCoreApplication.translate("MainWindow", u"From: {}".format(self.applyFromFrame+1), None))
         if self.check_boxes[0].isChecked():
-            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.gunnar_farneback_optical_flow)
+            self.effects.grayscale(self.changedFrames[self.applyFromFrame:self.applyToFrame+1])
         if self.check_boxes[1].isChecked():
-            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.gaussian_blur)
+            self.effects.gaussian_blur(self.changedFrames[self.applyFromFrame:self.applyToFrame+1])
         if self.check_boxes[2].isChecked():
-            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.edge_detection)
+            self.effects.edge_detection(self.changedFrames[self.applyFromFrame:self.applyToFrame+1])
         if self.check_boxes[3].isChecked():
-            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.sepia)
+            self.effects.sepia(self.changedFrames[self.applyFromFrame:self.applyToFrame+1])
         if self.check_boxes[4].isChecked():
-            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.pencil_sketch)
+            self.effects.vignette(self.changedFrames[self.applyFromFrame:self.applyToFrame+1])
         if self.check_boxes[5].isChecked():
-            self.changedFrames[self.applyFromFrame:self.applyToFrame+1] = multi_thread(self.changedFrames[self.applyFromFrame:self.applyToFrame+1], self.effects.cartonning)
+            self.effects.brightness(self.changedFrames[self.applyFromFrame:self.applyToFrame+1])
         self.update_qImages()
         self.show_frames()
 
@@ -216,7 +196,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def apply_effects_to_frame(self):
         self.previousFrames = copy.deepcopy(self.changedFrames)
-        self.changedFrames[self.firstFrame-1] = self.changedFrame
+        self.changedFrames[self.firstFrame+2] = self.changedFrame
         self.update_qImages()
         self.show_frames()
     def check_if_boxes_checked(self):   #check if check boxes are checked, if so call appropriate function
